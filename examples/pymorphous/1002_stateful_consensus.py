@@ -7,7 +7,7 @@ class BlueConsensusDemo(ExtrasDevice):
     """
     def run(self, epsilon):
         let([(x, 1 if once(random(0,50)) else 0)], 
-            self.blue(self.consensus(epsilon, init)))
+            self.blue(self.consensus(epsilon, x)))
 
 # stuff to run the simulation
 
