@@ -2,6 +2,6 @@ from pymorphous import *
 
 class BlueNeighborSense1(Device):
     def run(self):
-        let([(x, self.sense(1))], self.blue(sum_hood(self.nbr(x))))
+        self.blue(self.sum_hood(self.nbr(self.sense(1))))
         
 spawn_cloud(num_devices=1000, klass=BlueNeighborSense1)

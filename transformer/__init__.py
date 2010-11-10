@@ -1,15 +1,42 @@
 from ast import *
 
-class PymorphousVisitor(NodeTransformer):
+class Scopify(NodeTransformer):
+    """ 
+    Generate scopes
+    """
+    pass
 
+class Uniquify(NodeTransformer):
+    """
+    Uniquify variables
+    """
+    pass
+
+class CollectNbr(NodeTransformer):
+    def __init__(self):
+        self.nbr_vars = set()
+    
+    def visit_Module(self, node):
+        print dump(node)
+        return self.generic_visit(node)
+    
     def visit_Call(self, node):
-        stmts = []
-        if isinstance(node.func, Name):
-            if node.func.id == 'let2':
-                for tup in node.args[0].elts:
-                    stmts += [fix_missing_locations(Assign([Name(tup.elts[0].id, Store())], tup.elts[1]))]
-                return stmts + [self.generic_visit(node.args[1])] 
-        return [self.generic_visit(node)]
+        #print dump(node)
+        if isinstance(node.func, Attribute) and node.func.attr == 'nbr':
+            self.nbr_vars |= set(node.args)
+        return self.generic_visit(node)
+    
+class Neighborify(NodeTransformer):
+    def __init__(self, nbr_vars):
+        self.nbr_vars = nbr_vars
+        
+    def visit_Func(self, node):
+        print dump(node)
+        return self.generic_visit(node)
 
 def transform(ast):
-    return PymorphousVisitor().visit(ast)
+    Scopify().visit(ast)
+    new_ast = Uniquify().visit(ast)
+    collect_nbr = CollectNbr()
+    collect_nbr.visit(new_ast)
+    return Neighborify(collect_nbr.nbr_vars).visit(new_ast) 

@@ -7,8 +7,11 @@ def fib(n):
         return fib(n-1)+fib(n-2)
         
 class BlueFib(Device):
-    def run(self, n):
-        self.blue(self.fib(n))
+    def initialize(self, n):
+        self.n = n
+    
+    def run(self):
+        self.blue(self.fib(self.n))
         
 str = raw_input("Enter n:")
 d = int(str)

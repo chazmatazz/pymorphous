@@ -1,14 +1,15 @@
 from pymorphous import *
-# the device to run
 
 class BlueGradientDemo(LibDevice):
     """
     Gradient demo smoketest
     """
-    def run(self, threshold):
-        self.blue(self.gradient(once(1 if random(0,1) < threshold else 0)))
+    def init(self, threshold):
+        self.selected = 1 if random(0,1) < threshold else 0
+        self.gradient = self.Gradient()
 
-# stuff to run the simulation
+    def run(self):
+        self.blue(self.gradient.value(self.selected))
 
 spawn_cloud(num_devices=1000, klass=BlueGradientDemo, args=[0.01])
 

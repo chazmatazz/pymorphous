@@ -1,11 +1,11 @@
 from pymorphous import *
 
-# the device to run
-
 class BlueCounter(Device):
+    def initialize(self):
+        self.c = 0
+        
     def run(self):
-        letfed([(c, 0, lambda c: c + 1)], self.blue(c))
-
-# stuff to run the simulation
+        self.blue(c)
+        c += 1
 
 spawn_cloud(num_devices=1000, klass=BlueCounter)    
