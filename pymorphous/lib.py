@@ -34,7 +34,7 @@ class LibDevice(Device):
                mux(src, (0,0), 
                    mux(max_hood_plus(
                       (min_hood_plus(nbr(d) + nbr_range()), 0)
-                      if (nbr(d) + nbr_range() + v * nbr_lag() + dt())
+                      if (nbr(d) + nbr_range() + v * (nbr_lag() + dt())) <= d
                       else (let([(v0, radio_range()/(dt()*12))], (d + v0 * dt(), v0)))
                          )
                       )
