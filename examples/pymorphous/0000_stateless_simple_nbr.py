@@ -2,7 +2,7 @@ from pymorphous import *
 
 class BlueNeighborCount(Device):
     def run(self):
-        let([(x, 1)], sum_hood(self.nbr(x)))
+        let([(x, 1)], self.blue(sum_hood(self.nbr(x))))
         
         
 spawn_cloud(num_devices = 1000, klass=BlueNeighborCount)
