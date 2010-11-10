@@ -6,8 +6,7 @@ class BlueGradientDemo(LibDevice):
     Gradient demo smoketest
     """
     def run(self, threshold):
-        let([(x, 1 if once(random(0,1) < threshold) else 0)], 
-            self.blue(self.gradient(x)))
+        self.blue(self.gradient(once(1 if random(0,1) < threshold else 0)))
 
 # stuff to run the simulation
 

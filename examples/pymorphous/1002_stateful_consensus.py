@@ -5,9 +5,8 @@ class BlueConsensusDemo(ExtrasDevice):
     """
     Consensus demo from paper
     """
-    def run(self, epsilon):
-        let([(x, 1 if once(random(0,50)) else 0)], 
-            self.blue(self.consensus(epsilon, x)))
+    def run(self, epsilon): 
+        self.blue(self.consensus(epsilon, once(random(0,50))))
 
 # stuff to run the simulation
 

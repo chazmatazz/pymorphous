@@ -10,5 +10,6 @@ class ExtrasDevice(LibDevice):
             (* epsilon
              (sum-hood (- (nbr val) val))))))
         """
+
         return rep(val, init, 
                    val + epsilon * sum_hood(nbr(val) - val))
