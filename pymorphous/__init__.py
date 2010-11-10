@@ -25,7 +25,6 @@ class Device:
     def __init__(self, x, y, radio_range):
         self.leds = [0, 0, 0]
         self.senses = [0, 0, 0]
-        self.probes = [0, 0, 0]
         self.x = x
         self.y = y
         self.radio_range = radio_range
@@ -36,10 +35,6 @@ class Device:
         
     def sense(self, i):
         return self.senses[i]
-
-    def probe(self, value, i):
-        self.probes[i] = value
-        return self.probes[i]
     
     def move(self, x, y):
         self.x += x
@@ -51,7 +46,13 @@ class Device:
     def fold_hood(self, f, neighbor_field):
         return reduce(f, neighbor_field)
 
-    def nbr(self, var):
+    def nbr(self, val, extra_hash=None):
+        """
+        Identify the call site with hash, send (hash, val) to neighbors
+        retrieve field of (hash, val) from neighbors
+        match up hash, return val
+        the idea of extra_hash is to disambiguate same call site (e.g. multi consensus) 
+        """
         pass
     
     def nbr_range(self):

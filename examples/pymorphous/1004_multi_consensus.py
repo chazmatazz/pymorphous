@@ -9,7 +9,7 @@ class MultiConsensusDemo(ExtrasDevice):
         self.vals = [random(0,50), random(0,100), random(0,200)]
         
     def run(self):
-        # not doable
+        # not doable, how do we track nbr in consensus?
         for i in range(0, len(self.vals)):
             self.vals[i] = self.consensus(self.epsilon, self.vals[i])
             self.led(i, self.vals[i])

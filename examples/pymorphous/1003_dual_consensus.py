@@ -10,6 +10,7 @@ class DualConsensusDemo(ExtrasDevice):
         self.val2 = random(0,100)
         
     def run(self):
+        # have to track consensus calls individually
         self.val1 = self.consensus(self.epsilon, self.val1)
         self.blue(self.val1)
         self.val2 = self.consensus(self.epsilon, self.val2)
