@@ -1,10 +1,7 @@
 from pymorphous import *
 
-class Move(Device):    
-    def initialize(self, x, y):
-        self.x = x
-        self.y = y
-    def run(self):
-        self.move(self.x, self.y)
+class Move(Device):
+    def step(self):
+        self.move(random()-0.5, random()-0.5)
         
-spawn_cloud(num_devices=1000, klass=Move, args=[1,1])
+spawn_cloud(num_devices=1000, klass=Move)

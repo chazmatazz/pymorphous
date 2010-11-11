@@ -17,7 +17,7 @@ class CollectNbr(NodeTransformer):
         self.nbr_vars = set()
     
     def visit_Module(self, node):
-        print dump(node)
+        # print dump(node)
         return self.generic_visit(node)
     
     def visit_Call(self, node):
@@ -31,7 +31,7 @@ class Neighborify(NodeTransformer):
         self.nbr_vars = nbr_vars
         
     def visit_Func(self, node):
-        print dump(node)
+        #print dump(node)
         return self.generic_visit(node)
 
 def transform(ast):

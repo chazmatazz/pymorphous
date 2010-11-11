@@ -1,12 +1,5 @@
 from pymorphous import *
 
-def vdot(v1, v2):
-    assert(len(v1) == len(v2))
-    r = 0
-    for i in range(0, len(v1)):
-        r += v1[i] * v2[i]
-    return r
-
 def mux(test, then, else_):
     if test:
         return then
@@ -16,7 +9,7 @@ def mux(test, then, else_):
 def inf():
     return float("inf")
 
-class LibDevice(Device):
+class Device(BaseDevice):
     def sum_hood(self, neighbor_field):
         return self.fold_hood(sum, neighbor_field)
 

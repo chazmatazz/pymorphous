@@ -7,10 +7,10 @@ def fib(n):
         return fib(n-1)+fib(n-2)
         
 class BlueFib(Device): 
-    def initialize(self, n):
+    def setup(self, n):
         self.n = n
         
-    def run(self):
+    def step(self):
         self.blue(fib(self.n))
         
-spawn_cloud(num_devices=10, klass=BlueFib, args=[5])
+spawn_cloud(num_devices=1000, klass=BlueFib, args=[5])
