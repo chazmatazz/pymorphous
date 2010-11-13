@@ -12,7 +12,7 @@ class MultiConsensusDemo(Device):
         # needs extra_hash
         for i in range(0, len(self.vals)):
             self.led(i, self.vals[i])
-            self.vals[i] = self.consensus(self.epsilon, self.vals[i], extra_hash = i)
+            self.vals[i] = self.consensus(self.epsilon, self.vals[i], hash=i, extra_hash = i)
 
 spawn_cloud(num_devices=1000, klass=MultiConsensusDemo, args=[0.02])
 

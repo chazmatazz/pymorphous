@@ -11,21 +11,23 @@ def inf():
 
 class Device(BaseDevice):
     def sum_hood(self, neighbor_field):
-        return self.fold_hood(sum, neighbor_field)
+        return sum(neighbor_field)
 
     def max_hood(self, neighbor_field):
-        return self.fold_hood(max, neighbor_field)
+        return max(neighbor_field)
     
     def max_hood_plus(self, neighbor_field):
-        return self.max_hood(neighbor_field - field([self]))
+        # FIXME
+        return max(neighbor_field - set([self]))
         
     def min_hood(self, neighbor_field):
-        return self.fold_hood(min, neighbor_field)
+        return min(neighbor_field)
     
     def min_hood_plus(self, neighbor_field):
-        return self.min_hood(neighbor_field - field([self]))
+        # FIXME
+        return min(neighbor_field - set([self]))
     
-    def consensus(self, epsilon, val):
+    def consensus(self, epsilon, val, hash=None):
         """
          (def consensus (epsilon init)
           (rep val init
@@ -33,7 +35,7 @@ class Device(BaseDevice):
             (* epsilon
              (sum-hood (- (nbr val) val))))))
         """
-        return val + epsilon * self.sum_hood(self.nbr(val) - val)
+        return val + epsilon * self.sum_hood(self.nbr(val, hash) - val)
     
     class Gradient:
         """
@@ -49,8 +51,8 @@ class Device(BaseDevice):
             self.d = inf()
             self.v = 0
             
-        def value(self, src):
-            new_d = self.nbr(d) + self.nbr_range() + self.v * (self.nbr_lag() + self.dt())
+        def value(self, src, hash=None):
+            new_d = self.nbr(d, hash) + self.nbr_range() + self.v * (self.nbr_lag() + self.dt())
             then_tup = (self.min_hood_plus(self.nbr(d) + self.nbr_range()), 0)
             v0 = self.radio_range / (self.dt() * 12)
             else_tup = (d + v0 * self.dt(), v0)

@@ -13,4 +13,4 @@ class BlueFib(Device):
     def step(self):
         self.blue(fib(self.n))
         
-spawn_cloud(num_devices=1000, klass=BlueFib, args=[5])
+spawn_cloud(num_devices=100, klass=BlueFib, args=[5])

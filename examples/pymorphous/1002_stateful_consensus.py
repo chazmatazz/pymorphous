@@ -10,7 +10,7 @@ class BlueConsensusDemo(ExtrasDevice):
         
     def step(self):
         self.blue(self.val)
-        self.val = self.consensus(self.epsilon, self.val)
+        self.val = self.consensus(self.epsilon, self.val, hash=1)
 
 spawn_cloud(num_devices=1000, klass=BlueConsensusDemo, args=[0.02])
 

@@ -9,7 +9,7 @@ class BlueGradientDemo(Device):
         self.gradient = self.Gradient()
 
     def step(self):
-        self.blue(self.gradient.value(self.selected))
+        self.blue(self.gradient.value(self.selected, hash=1))
 
 spawn_cloud(num_devices=1000, klass=BlueGradientDemo, args=[0.01])
 
