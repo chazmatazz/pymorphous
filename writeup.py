@@ -146,7 +146,6 @@ class Device:
         self.keys = set()
         
     def _draw(self, window):
-        text = sf.String(repr(self.leds))
         window.Draw(sf.Shape.Circle(self.pos[0]*1000, 
                                     self.pos[1]*1000,
                                     10,
@@ -155,6 +154,7 @@ class Device:
                                     self.pos[1]*1000,
                                     0.1*1000,
                                     sf.Color(255,0,0,100)))
+        text = sf.String(repr(self.leds))
         text.SetSize(20)
         text.Move(self.pos[0]*1000, self.pos[1]*1000)
         window.Draw(text)
@@ -169,7 +169,7 @@ class Device:
         return max([field[k] for k in field])
     
     def sum_hood_plus(self, field):
-        """ return the min over the field without self """
+        """ return the sum over the field without self """
         f = field.copy()
         f[self] = 0
         return self.sum_hood(f)
