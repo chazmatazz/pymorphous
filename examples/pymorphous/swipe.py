@@ -17,7 +17,7 @@ class TrackingDemo(Device):
 
     def _reset(self):
         self.tracking = False
-        self.init_pos = numpy.array([0,0])
+        self.init_pos = numpy.array([0,0,0])
         self.time = 0
         
     def step(self):
@@ -43,26 +43,26 @@ class TrackingDemo(Device):
                    (tup tracking init-x init-y (+ time (dt)))))))
             (tup 0 0 0 0))))))
         """
-        self.blue(self.tracking)
-        delta = self.coord() - self.init_pos
+        self.blue = self.tracking
+        delta = self.pos - self.init_pos
         slope = abs(delta[1])/delta[0]
         
-        if not self.prev_sense and self.sense(self.sense_id):
+        if not self.prev_sense and self.senses[self.sense_id]:
             # init
             self.tracking = True
-            self.init_pos = self.coord()
+            self.init_pos = self.pos
             self.time = 0
         elif (self.tracking 
               and self.time <= self.timeout 
               and delta[0] > 0 
               and slope < self.max_slope): 
             if(self.min_dx > 0.5):
-                self.green(1)
-            self.time += self.dt()
+                self.green = 1
+            self.time += self.dt
         else:
             self._reset()
             
-        self.prev_sense = self.sense(self.sense_id)
+        self.prev_sense = self.senses[self.sense_id]
         
 spawn_cloud(num_devices=100, klass=TrackingDemo, args=[50, 0.2, 0.5, 1])
 

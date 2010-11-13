@@ -5,15 +5,12 @@ def fib(n):
         return 1
     else: 
         return fib(n-1)+fib(n-2)
-        
-class BlueFib(Device):
+
+class BlueFib(Device): 
     def setup(self, n):
         self.n = n
-    
-    def step(self):
-        self.blue(fib(self.n))
         
-str = raw_input("Enter n:")
-d = int(str)
-
-spawn_cloud(num_devices = 10, klass=BlueFib, args=[d])
+    def step(self):
+        self.blue = fib(self.n)
+        
+spawn_cloud(num_devices=100, klass=BlueFib, args=[5])

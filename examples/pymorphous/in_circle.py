@@ -11,8 +11,8 @@ class InCircles(Device):
     ;;   proto -n 5000 -r 5 -l "(+ (blue (in-circle (tup -40 -20) 30)) (green (in-circle (tup 0 0) 20)))"
     """
     def step(self):
-        self.blue(self.in_circle(numpy.array([-40, -20]), 30))
-        self.green(self.in_circle(numpy.array([0,0]), 20))
+        self.blue = self.in_circle(numpy.array([-40, -20, 0]), 30)
+        self.green = self.in_circle(numpy.array([0,0,0]), 20)
         
     def in_circle(self, origin, radius):
         """
@@ -20,7 +20,7 @@ class InCircles(Device):
           (let ((dv (- (probe (coord) 1) o)))
             (< (probe (vdot dv dv) 0) (* r r))))
         """
-        dv = self.coord() - origin
-        return dot(dv, dv) < radius * radius
+        dv = self.pos - origin
+        return numpy.dot(dv, dv) < radius * radius
         
-spawn_cloud(num_devices=1000, klass=InCircles)
+spawn_cloud(num_devices=100, klass=InCircles)

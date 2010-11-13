@@ -5,7 +5,7 @@ class BlueCounter(Device):
         self.c = 0
         
     def step(self):
-        self.blue(self.c)
+        self.blue = self.c
         self.c += 1
 
-spawn_cloud(num_devices=1000, klass=BlueCounter)    
+spawn_cloud(num_devices=100, klass=BlueCounter)    
