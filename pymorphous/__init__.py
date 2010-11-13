@@ -77,6 +77,7 @@ class BaseDevice(object):
         return self._nbr("%s%s" % (key, extra_key), val)
     
     def _stack_location(self):
+        return 0
         # file:line_number
         return repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
 
@@ -171,7 +172,7 @@ class DefaultSkin(object):
 
 class spawn_cloud(object):      
     def __init__(self, klass=None, args=None, num_devices=None, devices=None, 
-                step_size = 0, radio_range=0.05, width=1000, height=1000, 
+                step_size = 1/200., radio_range=0.05, width=1000, height=1000, 
                 window_title=None, _3D=False, skin=DefaultSkin()):
         
         if not devices:
@@ -225,7 +226,7 @@ class spawn_cloud(object):
             for d in devices:
                 d._advance()
                 
-        pyglet.clock.schedule_interval(update, 1/100. if step_size==0 else step_size)
+        pyglet.clock.schedule_interval(update, step_size)
                 
         @window.event
         def on_draw():
