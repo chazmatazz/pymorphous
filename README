@@ -10,18 +10,21 @@ or to run all tests
 
 python run_tests.py
 
-triple_consensus_single_line.py does not work because of limitations in 
+triple_consensus_single_line.py does not work because of limitations in the nbr function.
 
 --- Roadmap ---
 
 # pymorphous/draw.py: simulator
 ## slow - the pyopengl calls are slow
-## ugly - no reason to draw those rects, I just had the code handy.
-## needs user input to set sense
+## ugly - no reason to draw those boxes, I just had the code handy.
+## needs user input to set sense values, move devices
 
 # pymorphous/__init__.py: inspect.stack is slow.
 
-# examples/pymorphous/gradient_demo.py: doesn't seem to work. Hard to tell.
+# examples/pymorphous/gradient_demo.py: doesn't seem to work. Hard to tell. Likely a bad translation of
+the code.
+
+# examples/triple_consensus_single_line.py does not work because of limitations in the nbr function.
 
 --- Profiling and Development ---
 
