@@ -163,8 +163,7 @@ class Cloud(object):
                 self.mss += [milliseconds]
                 _mss = self.mss[10:]
                 if(len(_mss) % 100):
-                    print "milliseconds=%s, average_milliseconds=%f" % (
-                            _mss, float(sum(_mss))/len(_mss))
+                    print "milliseconds=%s" % _mss[len(_mss)-1]
             if self.connectivity_changed:
                 for d in self.devices:
                     d._nbrs = []

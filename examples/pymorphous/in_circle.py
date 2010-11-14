@@ -11,8 +11,8 @@ class InCircles(Device):
     ;;   proto -n 5000 -r 5 -l "(+ (blue (in-circle (tup -40 -20) 30)) (green (in-circle (tup 0 0) 20)))"
     """
     def step(self):
-        self.blue = self.in_circle(numpy.array([-40, -20, 0]), 30)
-        self.green = self.in_circle(numpy.array([0,0,0]), 20)
+        self.blue = self.in_circle(numpy.array([0.1, 0.1, 0]), 0.1)
+        self.green = self.in_circle(numpy.array([0.5,0.5,0]), 0.1)
         
     def in_circle(self, origin, radius):
         """

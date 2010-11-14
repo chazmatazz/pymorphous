@@ -1,0 +1,37 @@
+--- Installation ---
+
+PyMorphous requires numpy, pygame, and PyOpenGL
+
+--- Running ---
+
+python pymorphous.py examples/pymorphous/consensus.py
+
+or to run all tests
+
+python run_tests.py
+
+triple_consensus_single_line.py does not work because of limitations in 
+
+--- Roadmap ---
+
+# pymorphous/draw.py: simulator
+## slow - the pyopengl calls are slow
+## ugly - no reason to draw those rects, I just had the code handy.
+## needs user input to set sense
+
+# pymorphous/__init__.py: inspect.stack is slow.
+
+# examples/pymorphous/gradient_demo.py: doesn't seem to work. Hard to tell.
+
+--- Profiling and Development ---
+
+explore using http://docs.python.org/library/profile.html to profile the app, if needed.
+
+--- Documentation and Rationale ---
+
+Writeup for Compilers class:
+
+https://docs.google.com/document/pub?id=1SFwkaYSPFYPFJyHl7cnlnA7mRmblswqWt43R5Ouesi0
+
+
+
