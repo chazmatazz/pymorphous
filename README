@@ -28,7 +28,7 @@ the code.
 
 --- Profiling and Development ---
 
-explore using http://docs.python.org/library/profile.html to profile the app, if needed.
+Explore using http://docs.python.org/library/profile.html to profile the app.
 
 --- Documentation and Rationale ---
 
