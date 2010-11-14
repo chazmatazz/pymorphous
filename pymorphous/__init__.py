@@ -1,9 +1,16 @@
 import random
 import numpy
-import math
-import pyglet
-from pyglet.gl import *
 import inspect
+
+import pygame
+from pygame.locals import *
+
+try:
+    from OpenGL.GL import *
+    from OpenGL.GLU import *
+except:
+    print ('PyMorphous requires PyOpenGL')
+    raise SystemExit
 
 class NbrKeyError(Exception):
     def __init__(self, value):
@@ -77,7 +84,6 @@ class BaseDevice(object):
         return self._nbr("%s%s" % (key, extra_key), val)
     
     def _stack_location(self):
-        return 0
         # file:line_number
         return repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
 
@@ -98,7 +104,7 @@ class BaseDevice(object):
         ret = {}
         for nbr in self._nbrs + [self]:
             delta = self.pos - nbr.pos
-            ret[nbr] = math.sqrt(numpy.dot(delta, delta))
+            ret[nbr] = numpy.dot(delta, delta)**0.5
         return ret
     
     def nbr_lag(self):
@@ -125,55 +131,12 @@ class BaseDevice(object):
         return "id: %s, leds: %s, senses: %s, pos: %s" % (
                         self.id, repr(self.leds), repr(self.senses), 
                         repr(self.pos))
-      
-class DefaultSkin(object):
-    def setup(self):
-        # One-time GL setup
-        glClearColor(1, 1, 1, 1)
-        glColor3f(1, 0, 0)
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_CULL_FACE)
-    
-        # Uncomment this line for a wireframe view
-        #glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-    
-        # Simple light setup.  On Windows GL_LIGHT0 is enabled by default,
-        # but this is not the case on Linux or Mac, so remember to always 
-        # include it.
-        glEnable(GL_LIGHTING)
-        glEnable(GL_LIGHT0)
-        glEnable(GL_LIGHT1)
-    
-        # Define a simple function to create ctypes arrays of floats:
-        def vec(*args):
-            return (GLfloat * len(args))(*args)
-    
-        glLightfv(GL_LIGHT0, GL_POSITION, vec(.5, .5, 1, 0))
-        glLightfv(GL_LIGHT0, GL_SPECULAR, vec(.5, .5, 1, 1))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, vec(1, 1, 1, 1))
-        glLightfv(GL_LIGHT1, GL_POSITION, vec(1, 0, .5, 0))
-        glLightfv(GL_LIGHT1, GL_DIFFUSE, vec(.5, .5, .5, 1))
-        glLightfv(GL_LIGHT1, GL_SPECULAR, vec(1, 1, 1, 1))
-    
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec(0.5, 0, 0.3, 1))
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 1, 1, 1))
-        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)
-
-
-    
-    def body(self, device, batch, group):
-        pass
-    
-    def state(self, device, batch, group):
-        pass
-    
-    def metrics(self, dt, batch, group):
-        pass
-
-class spawn_cloud(object):      
+        
+class Cloud(object):      
     def __init__(self, klass=None, args=None, num_devices=None, devices=None, 
-                step_size = 1/200., radio_range=0.05, width=1000, height=1000, 
-                window_title=None, _3D=False, skin=DefaultSkin()):
+                steps_per_frame=4, desired_fps=50, radio_range=0.05, width=1000, height=1000, 
+                window_title=None, _3D=False):
+        assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
         
         if not devices:
             devices = []
@@ -188,50 +151,40 @@ class spawn_cloud(object):
                         d.setup(*args)
                     else:
                         d.setup()
-                
-        
+        self.devices = devices
+              
         self.connectivity_changed = True
         
-        window = pyglet.window.Window()
-        batch = pyglet.graphics.Batch()
-        body_group = pyglet.graphics.OrderedGroup(0)
-        state_group = pyglet.graphics.OrderedGroup(1)
-        metrics_group = pyglet.graphics.OrderedGroup(2)
-        skin.setup()
+        self.mss = []
+
+        self.steps_per_frame = steps_per_frame
+        self.desired_fps = desired_fps
+        self.width = width
+        self.height = height
+        self.window_title = window_title if window_title else klass.__name__
         
-        dts = [[]]
-        def update(dt):
-            dts[0] += [dt]
-            _dts = dts[0][2:]
-            if(len(_dts) == 10):
-                print "dts=%s, average=%f" % (_dts, sum(_dts)/len(_dts))
-                exit()
+    def update(self, time_passed):
+        for i in range(self.steps_per_frame):
+            milliseconds = float(time_passed)/self.steps_per_frame
+            self.mss += [milliseconds]
+            _mss = self.mss[10:]
+            if(len(_mss) % 100):
+                print "milliseconds=%s, average_milliseconds=%f" % (
+                        _mss, float(sum(_mss))/len(_mss))
             if self.connectivity_changed:
-                for d in devices:
+                for d in self.devices:
                     d._nbrs = []
-                    for e in devices:
+                    for e in self.devices:
                         if d != e:
                             delta = e.pos - d.pos
                             if numpy.dot(delta, delta) < d.radio_range * d.radio_range:
                                 d._nbrs += [e]
-                for d in devices:
-                    skin.body(device=d, batch=batch, group=body_group)
             self.connectivity_changed = False
-            
-            skin.metrics(dt=dt, batch=batch, group=metrics_group)
-            for d in devices:
-                skin.state(device=d, batch=batch, group=state_group)
-            for d in devices:
-                d._step(dt)
-            for d in devices:
+            for d in self.devices:
+                d._step(milliseconds)
+            for d in self.devices:
                 d._advance()
-                
-        pyglet.clock.schedule_interval(update, step_size)
-                
-        @window.event
-        def on_draw():
-            batch.draw()
-            
-        pyglet.app.run()
-            
+
+
 from pymorphous.lib import *
+from pymorphous.draw import *
