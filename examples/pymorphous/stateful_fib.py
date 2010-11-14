@@ -14,4 +14,4 @@ class BlueStateFib(Device):
         self.blue = fib(self.n)
         self.n += 1
         
-spawn_cloud(num_devices=10, steps_per_frame=1, fps=10, klass=BlueStateFib)
+spawn_cloud(num_devices=10, desired_fps=10, klass=BlueStateFib)

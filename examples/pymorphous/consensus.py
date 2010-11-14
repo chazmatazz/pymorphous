@@ -3,7 +3,7 @@ import random
 
 class Consensus(Device):
     def setup(self):
-        self.val = random.random() * 1000
+        self.val = random.random() * 10
         
     def step(self):
         self.red = self.val

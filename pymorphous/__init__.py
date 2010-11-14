@@ -2,15 +2,7 @@ import random
 import numpy
 import inspect
 
-import pygame
-from pygame.locals import *
-
-try:
-    from OpenGL.GL import *
-    from OpenGL.GLU import *
-except:
-    print ('PyMorphous requires PyOpenGL')
-    raise SystemExit
+DEBUG = True
 
 class NbrKeyError(Exception):
     def __init__(self, value):
@@ -29,6 +21,7 @@ class BaseDevice(object):
         self._nbrs = []
         self._vals = {}
         self._keys = set()
+        self._dt = 0
     
     @property
     def radio_range(self):
@@ -134,7 +127,7 @@ class BaseDevice(object):
         
 class Cloud(object):      
     def __init__(self, klass=None, args=None, num_devices=None, devices=None, 
-                steps_per_frame=4, desired_fps=50, radio_range=0.05, width=1000, height=1000, 
+                steps_per_frame=1, desired_fps=50, radio_range=0.05, width=1000, height=1000, 
                 window_title=None, _3D=False):
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
         
@@ -166,11 +159,12 @@ class Cloud(object):
     def update(self, time_passed):
         for i in range(self.steps_per_frame):
             milliseconds = float(time_passed)/self.steps_per_frame
-            self.mss += [milliseconds]
-            _mss = self.mss[10:]
-            if(len(_mss) % 100):
-                print "milliseconds=%s, average_milliseconds=%f" % (
-                        _mss, float(sum(_mss))/len(_mss))
+            if DEBUG:
+                self.mss += [milliseconds]
+                _mss = self.mss[10:]
+                if(len(_mss) % 100):
+                    print "milliseconds=%s, average_milliseconds=%f" % (
+                            _mss, float(sum(_mss))/len(_mss))
             if self.connectivity_changed:
                 for d in self.devices:
                     d._nbrs = []
