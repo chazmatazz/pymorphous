@@ -9,4 +9,4 @@ class MinPlusDemo(Device):
         self.red = self.senses[0]
         self.green = self.min_hood_plus(self.nbr(self.senses[0]))
 
-spawn_cloud(num_devices=100, klass=MinPlusDemo)
+spawn_cloud(klass=MinPlusDemo)

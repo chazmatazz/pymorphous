@@ -9,9 +9,9 @@ from OpenGL.GLU import *
 def blit(cloud):
     "draw the program"
     def drawDevice(d):
-        x = d.x*20
-        y = d.y*20
-        z = d.z*20
+        x = d.x*50
+        y = d.y*50
+        z = d.z*50
         leds = d.leds
         glPushMatrix()
         glTranslatef(x,y,z)
@@ -55,9 +55,9 @@ def spawn_cloud(*args, **kwargs):
 
     #setup the camera
     glMatrixMode(GL_PROJECTION)
-    gluPerspective(45.0,float(cloud.width)/cloud.height,0.1,100.0)    #setup lens
-    glTranslatef(0.0, 0.0, -50.0)                #move back
-    glRotatef(60, 1, 60, 0)                       #orbit higher
+    gluPerspective(45.0,float(cloud.width)/cloud.height,0.1,200.0)    #setup lens
+    glTranslatef(0.0, 0.0, -150.0)                #move back
+    glRotatef(60, 1, 60, 90)                       #orbit higher
 
     clock = pygame.time.Clock()
     

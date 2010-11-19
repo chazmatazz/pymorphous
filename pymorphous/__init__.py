@@ -2,6 +2,7 @@ import random
 import numpy
 #import inspect
 import sys
+from Bio.KDTree import KDTree
 
 PRINT_MS = False
 
@@ -142,7 +143,7 @@ class Cloud(object):
         
         if not devices:
             devices = []
-            for i in range(0, num_devices):
+            for i in range(num_devices):
                 d = klass(pos = numpy.array([random.random(), random.random(), random.random() if _3D else 0]),
                           id = i,
                           radio_range = radio_range, 
@@ -165,6 +166,7 @@ class Cloud(object):
         self.height = height
         self.window_title = window_title if window_title else klass.__name__
         
+
     def update(self, time_passed):
         for i in range(self.steps_per_frame):
             milliseconds = float(time_passed)/self.steps_per_frame
@@ -174,19 +176,20 @@ class Cloud(object):
                 if(len(_mss) % 100):
                     print "milliseconds=%s" % _mss[len(_mss)-1]
             if self.connectivity_changed:
+                point_matrix = numpy.array([d._pos for d in self.devices]) # ??
+                kdtree = KDTree(3, 10)
+                kdtree.set_coords(point_matrix)
+                kdtree.all_search(d.radio_range)
                 for d in self.devices:
                     d._nbrs = []
-                    for e in self.devices:
-                        if d != e:
-                            delta = e.pos - d.pos
-                            if numpy.dot(delta, delta) < d.radio_range * d.radio_range:
-                                d._nbrs += [e]
+                for (i,j) in kdtree.all_get_indices():
+                    self.devices[i]._nbrs += [self.devices[j]]
+                    self.devices[j]._nbrs += [self.devices[i]]
             self.connectivity_changed = False
             for d in self.devices:
                 d._step(milliseconds)
             for d in self.devices:
                 d._advance()
-
 
 from pymorphous.lib import *
 from pymorphous.draw import *

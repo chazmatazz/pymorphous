@@ -10,4 +10,4 @@ class GradientDemo(Device):
         self.red = self.senses[0]
         self.green = self.gradient.value(self.senses[0])*10
 
-spawn_cloud(num_devices=50, klass=GradientDemo)
+spawn_cloud(klass=GradientDemo)
