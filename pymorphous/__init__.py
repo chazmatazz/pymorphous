@@ -1,8 +1,9 @@
 import random
 import numpy
-import inspect
+#import inspect
+import sys
 
-DEBUG = True
+PRINT_MS = False
 
 class NbrKeyError(Exception):
     def __init__(self, value):
@@ -167,7 +168,7 @@ class Cloud(object):
     def update(self, time_passed):
         for i in range(self.steps_per_frame):
             milliseconds = float(time_passed)/self.steps_per_frame
-            if DEBUG:
+            if PRINT_MS:
                 self.mss += [milliseconds]
                 _mss = self.mss[10:]
                 if(len(_mss) % 100):

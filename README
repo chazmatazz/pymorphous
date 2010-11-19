@@ -1,6 +1,6 @@
 --- Installation ---
 
-PyMorphous requires numpy, pygame, and PyOpenGL
+PyMorphous requires numpy, pygame, and PyOpenGL.
 
 --- Running ---
 
@@ -15,10 +15,12 @@ triple_consensus_single_line.py does not work because of limitations in the nbr 
 --- Roadmap ---
 
 # pymorphous/draw.py: simulator
-## ugly - the current implmentation is designed to be fast
+## the current implementation is designed to be fast
+## make prettier
 ## needs user input to set sense values, move devices
+## use PyQt or other high-level GUI language. Need 3D camera control, perhaps widgets. Look into 3D aerial view open-source software, etc.
 
-# pymorphous/__init__.py: inspect.stack is slow.
+# pymorphous/__init__.py: sys._frame is fast, but perhaps unsafe? Inspect.stack is slow.
 
 # examples/pymorphous/gradient_demo.py: doesn't seem to work. Hard to tell. Likely a bad translation of
 the code.
@@ -30,6 +32,10 @@ the code.
 Use RunSnakeRun: http://www.vrplumber.com/programming/runsnakerun/
 
 See also http://docs.python.org/library/profile.html for general Python profiling.
+
+The profile is saved in PyMorphous.profile, for convenience.
+
+View with ``runsnake PyMorphous.profile``.
 
 --- Documentation and Rationale ---
 

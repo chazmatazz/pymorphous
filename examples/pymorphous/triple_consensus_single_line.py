@@ -10,4 +10,4 @@ class TripleConsensusSingleLine(Device):
         # note that we don't call with extra hash
         self.vals = [self.consensus(0.01, self.vals[0]), self.consensus(0.01, self.vals[1]), self.consensus(0.01, self.vals[2])]
 
-spawn_cloud(num_devices=100, klass=TripleConsensusSingleLine)
+spawn_cloud(klass=TripleConsensusSingleLine)

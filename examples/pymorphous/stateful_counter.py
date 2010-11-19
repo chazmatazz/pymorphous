@@ -8,4 +8,4 @@ class BlueCounter(Device):
         self.blue = self.c
         self.c += 1
 
-spawn_cloud(num_devices=100, klass=BlueCounter)    
+spawn_cloud(klass=BlueCounter)    

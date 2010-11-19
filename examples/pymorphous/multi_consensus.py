@@ -11,4 +11,4 @@ class MultiConsensus(Device):
             # must call with extra_key to disambiguate call site
             self.vals[i] = self.consensus(0.01, self.vals[i], extra_key=i)
 
-spawn_cloud(klass=MultiConsensus)
+spawn_cloud(num_devices=1000, klass=MultiConsensus)

@@ -64,5 +64,5 @@ class TrackingDemo(Device):
             
         self.prev_sense = self.senses[self.sense_id]
         
-spawn_cloud(num_devices=100, klass=TrackingDemo, args=[50, 0.2, 0.5, 1])
+spawn_cloud(klass=TrackingDemo, args=[50, 0.2, 0.5, 1])
 
