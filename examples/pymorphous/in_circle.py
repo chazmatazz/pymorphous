@@ -23,4 +23,4 @@ class InCircles(Device):
         dv = self.pos - origin
         return numpy.dot(dv, dv) < radius * radius
         
-spawn_cloud(num_devices=100, klass=InCircles)
+spawn_cloud(klass=InCircles)

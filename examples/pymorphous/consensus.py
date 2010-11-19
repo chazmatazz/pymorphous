@@ -10,4 +10,4 @@ class Consensus(Device):
         # note that we don't call with extra hash
         self.val = self.consensus(0.01, self.val)
         
-spawn_cloud(num_devices=100, klass=Consensus)
+spawn_cloud(klass=Consensus)

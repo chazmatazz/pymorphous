@@ -22,6 +22,7 @@ class BaseDevice(object):
         self._vals = {}
         self._keys = set()
         self._dt = 0
+        self.root_frame = None
     
     @property
     def radio_range(self):
@@ -73,13 +74,18 @@ class BaseDevice(object):
         self._pos = new_pos
     
     def nbr(self, val, extra_key=None):
-        key = self._stack_location()
+        #key = repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
+        frame = None
+        frames = []
+        i = 1
+        while (not frame or frame.f_code.co_filename != self.root_frame.f_code.co_filename 
+            and frame.f_lineno != self.root_frame.f_lineno):
+            frame = sys._getframe(i)
+            i += 1
+            frames += [frame]
+        key = repr(["%s:%d" % (f.f_code.co_filename, f.f_lineno) for f in frames])
         return self._nbr("%s%s" % (key, extra_key), val)
     
-    def _stack_location(self):
-        # file:line_number
-        return repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
-
     def _nbr(self, key, val):
         if key in self._keys:
             raise NbrKeyError("key %s found twice" % key)
@@ -114,6 +120,8 @@ class BaseDevice(object):
         return self._dt
         
     def _step(self, dt):
+        if not self.root_frame:
+            self.root_frame = sys._getframe(1)
         self._dt = dt
         self.step()
         
@@ -126,7 +134,7 @@ class BaseDevice(object):
                         repr(self.pos))
         
 class Cloud(object):      
-    def __init__(self, klass=None, args=None, num_devices=None, devices=None, 
+    def __init__(self, klass=None, args=None, num_devices=500, devices=None, 
                 steps_per_frame=1, desired_fps=50, radio_range=0.05, width=1000, height=1000, 
                 window_title=None, _3D=False):
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)

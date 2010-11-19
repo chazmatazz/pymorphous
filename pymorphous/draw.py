@@ -6,76 +6,42 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 
-
-
-#some simple data for a colored cube
-#here we have the 3D point position and color
-#for each corner. then we have a list of indices
-#that describe each face, and a list of indieces
-#that describes each edge
-
-
-CUBE_POINTS = (
-    (0.5, -0.5, -0.5),  (0.5, 0.5, -0.5),
-    (-0.5, 0.5, -0.5),  (-0.5, -0.5, -0.5),
-    (0.5, -0.5, 0.5),   (0.5, 0.5, 0.5),
-    (-0.5, -0.5, 0.5),  (-0.5, 0.5, 0.5)
-)
-
-#colors are 0-1 floating values
-CUBE_COLORS = (
-    (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 0),
-    (1, 0, 1), (1, 1, 1), (0, 0, 1), (0, 1, 1)
-)
-
-CUBE_QUAD_VERTS = (
-    (0, 1, 2, 3), (3, 2, 7, 6), (6, 7, 5, 4),
-    (4, 5, 1, 0), (1, 5, 7, 2), (4, 0, 3, 6)
-)
-
-RGB_COLORS = [(
-    (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0),
-    (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0)
-),(
-    (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0),
-    (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)
-),(
-    (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1),
-    (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1)
-)]
-
 def blit(cloud):
     "draw the program"
-    for d in cloud.devices:
+    def drawDevice(d):
+        x = d.x*20
+        y = d.y*20
+        z = d.z*20
+        leds = d.leds
         glPushMatrix()
-        glTranslatef(d.x*20, d.y*20, d.z*20)
+        glTranslatef(x,y,z)
     
-        allpoints = zip(CUBE_POINTS, CUBE_COLORS)
-    
-        glBegin(GL_QUADS)
-        for face in CUBE_QUAD_VERTS:
-            for vert in face:
-                pos, color = allpoints[vert]
-                glColor3fv(color)
-                glVertex3fv(pos)
-        glEnd()
+        # Draw a square (quadrilateral)
+        glBegin(GL_QUADS)                   # Start drawing a 4 sided polygon
+        glColor3f(1.0, 1.0, 1.0)
+        glVertex3f(-1.0, 1.0, 0.0)          # Top Left
+        glVertex3f(1.0, 1.0, 0.0)           # Top Right
+        glVertex3f(1.0, -1.0, 0.0)          # Bottom Right
+        glVertex3f(-1.0, -1.0, 0.0)         # Bottom Left
+        glEnd()                             # We are done with the polygon
         glPopMatrix()
         
         for i in range(3):
-            if d.leds[i] != 0:
+            if leds[i] != 0:
                 glPushMatrix()
-                glTranslatef(d.x*20, d.y*20, d.z*20+d.leds[i])
-            
-                allpoints = zip(CUBE_POINTS, RGB_COLORS[i])
-            
-                glBegin(GL_QUADS)
-                for face in CUBE_QUAD_VERTS:
-                    for vert in face:
-                        pos, color = allpoints[vert]
-                        glColor3fv(color)
-                        glVertex3fv(pos)
-                glEnd()
+                glTranslatef(x,y,z+leds[i])
+                
+                # Draw a square (quadrilateral)
+                glBegin(GL_QUADS)                   # Start drawing a 4 sided polygon
+                glColor3f(1.0 if i==0 else 0.0, 1.0 if i==1 else 0.0, 1.0 if i==2 else 0.0)
+                glVertex3f(-1.0, 1.0, 0.0)          # Top Left
+                glVertex3f(1.0, 1.0, 0.0)           # Top Right
+                glVertex3f(1.0, -1.0, 0.0)          # Bottom Right
+                glVertex3f(-1.0, -1.0, 0.0)         # Bottom Left
+                glEnd()                             # We are done with the polygon
                 glPopMatrix()
+                
+    map(drawDevice, cloud.devices)
      
 def spawn_cloud(*args, **kwargs):
     "run the program"

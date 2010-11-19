@@ -15,8 +15,7 @@ triple_consensus_single_line.py does not work because of limitations in the nbr 
 --- Roadmap ---
 
 # pymorphous/draw.py: simulator
-## slow - the pyopengl calls are slow
-## ugly - no reason to draw those boxes, I just had the code handy.
+## ugly - the current implmentation is designed to be fast
 ## needs user input to set sense values, move devices
 
 # pymorphous/__init__.py: inspect.stack is slow.
@@ -28,7 +27,9 @@ the code.
 
 --- Profiling and Development ---
 
-Explore using http://docs.python.org/library/profile.html to profile the app.
+Use RunSnakeRun: http://www.vrplumber.com/programming/runsnakerun/
+
+See also http://docs.python.org/library/profile.html for general Python profiling.
 
 --- Documentation and Rationale ---
 

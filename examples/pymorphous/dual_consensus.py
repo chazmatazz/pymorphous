@@ -12,4 +12,4 @@ class DualConsensus(Device):
         self.green = self.vals[1]
         self.vals[1] = self.consensus(0.01, self.vals[1])
 
-spawn_cloud(num_devices=100, klass=DualConsensus)
+spawn_cloud(klass=DualConsensus)
