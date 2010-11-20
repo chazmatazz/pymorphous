@@ -2,7 +2,7 @@ import random
 import numpy
 #import inspect
 import sys
-from Bio.KDTree import KDTree
+from scipy.spatial import KDTree
 
 PRINT_MS = False
 
@@ -68,7 +68,7 @@ class BaseDevice(object):
     
     @property
     def pos(self):
-        return self._pos
+        return self._pos.data
     
     @pos.setter
     def pos(self, new_pos):
@@ -136,7 +136,7 @@ class BaseDevice(object):
                         repr(self.pos))
         
 class Cloud(object):      
-    def __init__(self, klass=None, args=None, num_devices=500, devices=None, 
+    def __init__(self, klass=None, args=None, num_devices=3000, devices=None, 
                 steps_per_frame=1, desired_fps=50, radio_range=0.05, width=1000, height=1000, 
                 window_title=None, _3D=False):
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
@@ -165,7 +165,7 @@ class Cloud(object):
         self.width = width
         self.height = height
         self.window_title = window_title if window_title else klass.__name__
-        
+        self.radio_range = radio_range
 
     def update(self, time_passed):
         for i in range(self.steps_per_frame):
@@ -176,13 +176,12 @@ class Cloud(object):
                 if(len(_mss) % 100):
                     print "milliseconds=%s" % _mss[len(_mss)-1]
             if self.connectivity_changed:
-                point_matrix = numpy.array([d._pos for d in self.devices]) # ??
-                kdtree = KDTree(3, 10)
-                kdtree.set_coords(point_matrix)
-                kdtree.all_search(d.radio_range)
+                point_matrix = numpy.array([d._pos for d in self.devices])
+                kdtree = KDTree(point_matrix)
                 for d in self.devices:
                     d._nbrs = []
-                for (i,j) in kdtree.all_get_indices():
+                for (i,j) in kdtree.query_pairs(self.radio_range):
+                    print i,j
                     self.devices[i]._nbrs += [self.devices[j]]
                     self.devices[j]._nbrs += [self.devices[i]]
             self.connectivity_changed = False
