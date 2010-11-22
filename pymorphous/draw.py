@@ -7,6 +7,7 @@ from PySide import QtCore, QtGui, QtOpenGL
 try:
     from OpenGL.GL import *
     from OpenGL.GLU import *
+    from OpenGL.GLUT import *
 except ImportError:
     app = QtGui.QApplication(sys.argv)
     QtGui.QMessageBox.critical(None, "PyMorphous",
@@ -47,7 +48,22 @@ class GLWidget(QtOpenGL.QGLWidget):
     
     def initializeGL(self):
         glEnable(GL_DEPTH_TEST)
-        glClearColor(0.0, 0.0, 0.0, 1.0)
+        glClearColor(0.0, 0.0, 0.0, 1.0)    
+        glutInit()   
+        self.deviceList = glGenLists(1);
+        if not self.deviceList:
+            raise SystemError("""Unable to generate display list using glGenLists""")
+        glNewList(self.deviceList, GL_COMPILE)
+        glutSolidSphere(0.4, 8, 8)
+        glEndList()
+        self.ledList = []
+        for i in range(3):
+            self.ledList += [glGenLists(1)]
+            if not self.ledList[i]:
+                raise SystemError("""Unable to generate display list using glGenLists""")
+            glNewList(self.ledList[i], GL_COMPILE)
+            glutSolidSphere(0.4, 8, 8)
+            glEndList()
     
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
@@ -59,30 +75,16 @@ class GLWidget(QtOpenGL.QGLWidget):
             leds = d.leds
             glPushMatrix()
             glTranslatef(x,y,z)
-        
-            # Draw a square (quadrilateral)
-            glBegin(GL_QUADS)                   # Start drawing a 4 sided polygon
             glColor3f(1.0, 1.0, 1.0)
-            glVertex3f(-1.0, 1.0, 0.0)          # Top Left
-            glVertex3f(1.0, 1.0, 0.0)           # Top Right
-            glVertex3f(1.0, -1.0, 0.0)          # Bottom Right
-            glVertex3f(-1.0, -1.0, 0.0)         # Bottom Left
-            glEnd()                             # We are done with the polygon
+            glCallList(self.deviceList)
             glPopMatrix()
             
             for i in range(3):
                 if leds[i] != 0:
                     glPushMatrix()
                     glTranslatef(x,y,z+leds[i])
-                    
-                    # Draw a square (quadrilateral)
-                    glBegin(GL_QUADS)                   # Start drawing a 4 sided polygon
                     glColor3f(1.0 if i==0 else 0.0, 1.0 if i==1 else 0.0, 1.0 if i==2 else 0.0)
-                    glVertex3f(-1.0, 1.0, 0.0)          # Top Left
-                    glVertex3f(1.0, 1.0, 0.0)           # Top Right
-                    glVertex3f(1.0, -1.0, 0.0)          # Bottom Right
-                    glVertex3f(-1.0, -1.0, 0.0)         # Bottom Left
-                    glEnd()                             # We are done with the polygon
+                    glCallList(self.ledList[i])
                     glPopMatrix()
     
     def resizeGL(self, width, height):
