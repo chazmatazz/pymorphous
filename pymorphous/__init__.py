@@ -1,17 +1,91 @@
 import random
 import numpy
-#import inspect
+import inspect
 import sys
 from scipy.spatial import KDTree
 
 PRINT_MS = False
+SAFE = False
 
+class Field(dict):
+    def __init__(self, *args):
+        dict.__init__(self, *args)
+    
+    def __add__(self, other):
+        ret = Field()
+        for k in self.keys():
+            ret[k] = (self[k] + other[k]) if (self[k]!=None and other[k]!=None) else None
+        return ret
+    
+    def __sub__(self, other):
+        ret = Field()
+        for k in self.keys():
+            ret[k] = (self[k] - other[k]) if (self[k]!=None and other[k]!=None) else None
+        return ret
+    
+    def __iadd__(self, other):
+        for k in self.keys():
+            if self[k]!=None and other[k]!=None:
+                self[k] += other[k]
+            else:
+                self[k] = None
+        return self
+    
+    def __isub__(self, other):
+        for k in self.keys():
+            if self[k]!=None and other[k]!=None:
+                self[k] -= other[k]
+            else:
+                self[k] = None
+        return self
+    
+    def __div__(self, other):
+        ret = Field()
+        for k in self.keys():
+            ret[k] = (self[k] / other[k]) if (self[k]!=None and other[k]!=None) else None
+        return ret
+    
+    def __mul__(self, other):
+        ret = Field()
+        for k in self.keys():
+            ret[k] = (self[k] * other[k]) if (self[k]!=None and other[k]!=None) else None
+        return ret
+    
+    def __idiv__(self, other):
+        for k in self.keys():
+            if self[k]!=None and other[k]!=None:
+                self[k] /= other[k]
+            else:
+                self[k] = None
+        return self
+    
+    def __imul__(self, other):
+        for k in self.keys():
+            if self[k]!=None and other[k]!=None:
+                self[k] *= other[k]
+            else:
+                self[k] = None
+        return self
+    
+    def __le__(self, other):
+        ret = Field()
+        for k in self.keys():
+            ret[k] = (self[k] <= other[k]) if (self[k]!=None and other[k]!=None) else None
+        return ret
+    
+    def not_none_values(self):
+        ret = []
+        for v in self.values():
+            if v!=None:
+                ret += [v]
+        return ret
+    
 class NbrKeyError(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
-    
+
 class BaseDevice(object):
     def __init__(self, pos, id, radio_range, cloud):
         # pos is a numpy.array
@@ -22,8 +96,8 @@ class BaseDevice(object):
         self.leds = [0, 0, 0]
         self.senses = [0, 0, 0]
         self._nbrs = []
-        self._vals = {}
-        self._keys = set()
+        self._dict = {}
+        self._old_dict = {}
         self._dt = 0
         self.root_frame = None
     
@@ -69,7 +143,6 @@ class BaseDevice(object):
     
     @property
     def pos(self):
-        """ return a list """
         return self._pos
     
     @pos.setter
@@ -78,46 +151,61 @@ class BaseDevice(object):
         self._pos = new_pos
     
     def nbr(self, val, extra_key=None):
-        #key = repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
-        frame = None
-        frames = []
-        i = 1
-        while (not frame or frame.f_code.co_filename != self.root_frame.f_code.co_filename 
-            and frame.f_lineno != self.root_frame.f_lineno):
-            frame = sys._getframe(i)
-            i += 1
-            frames += [frame]
-        key = repr(["%s:%d" % (f.f_code.co_filename, f.f_lineno) for f in frames])
-        return self._nbr("%s%s" % (key, extra_key), val)
+        if SAFE:
+            key = repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
+        else:
+            frame = None
+            frames = []
+            i = 1
+            while (not frame or frame.f_code.co_filename != self.root_frame.f_code.co_filename 
+                and frame.f_lineno != self.root_frame.f_lineno):
+                frame = sys._getframe(i)
+                i += 1
+                frames += [frame]
+            key = repr(["%s:%d" % (f.f_code.co_filename, f.f_lineno) for f in frames])
+        if extra_key:
+            return self._nbr("%s%s" % (key, extra_key), val)
+        else:
+            return self._nbr(key, val)
     
     def _nbr(self, key, val):
-        if key in self._keys:
+        if key in self._dict.keys():
             raise NbrKeyError("key %s found twice" % key)
-        self._keys |= set([key])
-        self._vals[key] = val
-        ret = {}
+        self._dict[key] = val
+        ret = Field()
         for nbr in self._nbrs + [self]:
             try:
-                ret[nbr] = nbr._vals[key]
+                ret[nbr] = nbr._old_dict[key]
             except KeyError:
-                pass
+                ret[nbr] = None
         return ret
     
     def nbr_range(self):
-        ret = {}
+        ret = Field()
         for nbr in self._nbrs + [self]:
             delta = self.pos - nbr.pos
             ret[nbr] = numpy.dot(delta, delta)**0.5
         return ret
     
     def nbr_lag(self):
-        ret = {}
+        ret = Field()
         for nbr in self._nbrs + [self]:
             if nbr == self:
                 ret[nbr] = 0
             else:
                 ret[nbr] = nbr.dt
         return ret
+    
+    def fieldize(self, val):
+        ret = Field()
+        for nbr in self._nbrs + [self]:
+            ret[nbr] = val
+        return ret
+    
+    def deself(self, field):
+        f = Field(field.copy())
+        del f[self]
+        return f
     
     @property
     def dt(self):
@@ -128,18 +216,60 @@ class BaseDevice(object):
             self.root_frame = sys._getframe(1)
         self._dt = dt
         self.step()
-        
-    def _advance(self):
-        self._keys = set()
+        self._old_dict = self._dict
+        self._dict = {}
         
     def __repr__(self):
-        return "id: %s, leds: %s, senses: %s, pos: %s" % (
-                        self.id, repr(self.leds), repr(self.senses), 
-                        repr(self.pos))
+        return "#%s" % self.id
+    
+    @property
+    def red(self):
+        return self.leds[0]
+    
+    @red.setter
+    def red(self, val):
+        self.leds[0] = val
         
+    @property
+    def green(self):
+        return self.leds[1]
+    
+    @green.setter
+    def green(self, val):
+        self.leds[1] = val
+        
+    @property
+    def blue(self):
+        return self.leds[2]
+    
+    @blue.setter
+    def blue(self, val):
+        self.leds[2] = val
+            
+    def sum_hood(self, field):
+        return sum(field.not_none_values()+[0])
+    
+    def min_hood(self, field):
+        return min(field.not_none_values()+[float('inf')])
+    
+    def max_hood(self, field):
+        return max(field.not_none_values()+[float('-inf')])
+    
+    def sum_hood_plus(self, field):
+        """ return the sum over the field without self """
+        return self.sum_hood(self.deself(field))
+    
+    def min_hood_plus(self, field):
+        """ return the min over the field without self """
+        return self.min_hood(self.deself(field))
+    
+    def max_hood_plus(self, field):
+        """ return the max over the field without self """
+        return self.max_hood(self.deself(field))
+    
 class Cloud(object):      
     def __init__(self, klass=None, args=None, num_devices=500, devices=None, 
-                steps_per_frame=1, desired_fps=50, radio_range=0.05, width=1000, height=1000, 
+                steps_per_frame=1, desired_fps=50, radio_range=0.1, width=1000, height=1000, 
                 window_title=None, _3D=False):
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
         
@@ -188,8 +318,6 @@ class Cloud(object):
             self.connectivity_changed = False
             for d in self.devices:
                 d._step(milliseconds)
-            for d in self.devices:
-                d._advance()
 
 from pymorphous.lib import *
 from pymorphous.draw import *

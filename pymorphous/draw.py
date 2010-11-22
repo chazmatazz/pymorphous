@@ -1,3 +1,5 @@
+import time
+
 from pymorphous import *
 
 from PySide import QtCore, QtGui, QtOpenGL
@@ -33,8 +35,9 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.cloud = cloud
          
         timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.step)
+        timer.timeout.connect(self.myupdate)
         timer.start(1000.0/self.cloud.desired_fps)
+        self.last_time = time.time()
     
     def minimumSizeHint(self):
         return QtCore.QSize(50, 50)
@@ -92,8 +95,11 @@ class GLWidget(QtOpenGL.QGLWidget):
         glTranslatef(0.0, 0.0, -150.0)                #move back
         glRotatef(60, 1, 60, 90)                       #orbit higher
     
-    def step(self):
-        self.cloud.update(0.1)
+    def myupdate(self):
+        now = time.time()
+        delta = now - self.last_time
+        self.cloud.update(delta)
+        self.last_time = now
         self.updateGL()    
 
 def spawn_cloud(*args, **kwargs):
