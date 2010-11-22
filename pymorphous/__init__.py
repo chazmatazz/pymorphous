@@ -324,6 +324,8 @@ class Cloud(object):
         self.headless = headless
 
     def update(self, time_passed):
+        epsilon = 0.01
+        time_passed = time_passed if time_passed!=0 else epsilon
         for i in range(self.steps_per_frame):
             milliseconds = float(time_passed)/self.steps_per_frame
             if PRINT_MS:
@@ -347,15 +349,12 @@ from pymorphous.lib import *
 from pymorphous.draw import *
 
 def spawn_cloud(*args, **kwargs):
-    epsilon = 0.01
     cloud = Cloud(*args, **kwargs)
-    
     if cloud.headless:
         last_time = time.time()
         while True:
             now = time.time()
             delta = now - last_time
-            delta = delta if delta!=0 else epsilon
             cloud.update(delta)
             last_time = now
     else:
