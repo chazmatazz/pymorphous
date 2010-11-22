@@ -3,7 +3,7 @@ import sys
 import os
 from os.path import splitext
 
-PROFILE = True
+PROFILE = len(sys.argv) > 2
 
 def run():
     if len(sys.argv) < 2:
@@ -23,8 +23,7 @@ def run():
     #code = compile(a, "<string>", "exec")
     #exec(code, globals(), globals())
     exec(source, globals(), globals())
-    
-    
+
 if PROFILE:
     import cProfile
     command = "run()"

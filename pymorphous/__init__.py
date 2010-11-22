@@ -14,6 +14,7 @@ class NbrKeyError(Exception):
     
 class BaseDevice(object):
     def __init__(self, pos, id, radio_range, cloud):
+        # pos is a numpy.array
         self._pos = pos
         self.id = id
         self._radio_range = radio_range
@@ -68,7 +69,8 @@ class BaseDevice(object):
     
     @property
     def pos(self):
-        return self._pos.data
+        """ return a list """
+        return self._pos
     
     @pos.setter
     def pos(self, new_pos):
@@ -136,7 +138,7 @@ class BaseDevice(object):
                         repr(self.pos))
         
 class Cloud(object):      
-    def __init__(self, klass=None, args=None, num_devices=3000, devices=None, 
+    def __init__(self, klass=None, args=None, num_devices=500, devices=None, 
                 steps_per_frame=1, desired_fps=50, radio_range=0.05, width=1000, height=1000, 
                 window_title=None, _3D=False):
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
@@ -176,12 +178,11 @@ class Cloud(object):
                 if(len(_mss) % 100):
                     print "milliseconds=%s" % _mss[len(_mss)-1]
             if self.connectivity_changed:
-                point_matrix = numpy.array([d._pos for d in self.devices])
+                point_matrix = numpy.array([d.pos for d in self.devices])
                 kdtree = KDTree(point_matrix)
                 for d in self.devices:
                     d._nbrs = []
                 for (i,j) in kdtree.query_pairs(self.radio_range):
-                    print i,j
                     self.devices[i]._nbrs += [self.devices[j]]
                     self.devices[j]._nbrs += [self.devices[i]]
             self.connectivity_changed = False
