@@ -102,14 +102,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         self.last_time = now
         self.updateGL()    
 
-def spawn_cloud(*args, **kwargs):
-    "run the program"
-
-    cloud = Cloud(*args, **kwargs)
-    
+def display_cloud(cloud):
     app = QtGui.QApplication(sys.argv)
-
     window = Window(cloud = cloud)
     window.show()
-    
     sys.exit(app.exec_())

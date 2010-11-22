@@ -3,6 +3,7 @@ import numpy
 import inspect
 import sys
 from scipy.spatial import KDTree
+import operator
 
 PRINT_MS = False
 SAFE = False
@@ -11,67 +12,95 @@ class Field(dict):
     def __init__(self, *args):
         dict.__init__(self, *args)
     
-    def __add__(self, other):
+    def _op(self, other, op):
         ret = Field()
-        for k in self.keys():
-            ret[k] = (self[k] + other[k]) if (self[k]!=None and other[k]!=None) else None
+        if isinstance(other, Field):
+            for k in self.keys():
+                if self[k]!=None and other[k]!=None:
+                    ret[k] = op(self[k], other[k])
+                else:
+                    ret[k] = None       
+        else:
+            for k in self.keys():
+                if self[k]!=None:
+                    ret[k] = op(self[k], other)
+                else:
+                    ret[k] = None
         return ret
+    
+    def _rop(self, other, op):
+        ret = Field()
+        if isinstance(other, Field):
+            for k in self.keys():
+                if self[k]!=None and other[k]!=None:
+                    ret[k] = op(other[k], self[k])
+                else:
+                    ret[k] = None       
+        else:
+            for k in self.keys():
+                if self[k]!=None:
+                    ret[k] = op(other, self[k])
+                else:
+                    ret[k] = None
+        return ret
+    
+    def _iop(self, other, iop):
+        print self, iop, other
+        if isinstance(other, Field):
+            for k in self.keys():
+                if self[k]!=None and other[k]!=None:
+                    iop(self[k], other[k])
+                else:
+                    self[k] = None
+        else:
+            for k in self.keys():
+                if self[k]!=None:
+                    iop(self[k], other)
+                else:
+                    self[k] = None
+        return self
+    
+    def __add__(self, other):
+        return self._op(other, operator.add)
     
     def __sub__(self, other):
-        ret = Field()
-        for k in self.keys():
-            ret[k] = (self[k] - other[k]) if (self[k]!=None and other[k]!=None) else None
-        return ret
+        return self._op(other, operator.sub)
+    
+    def __radd__(self, other):
+        return self._rop(other, operator.add)
+    
+    def __rsub__(self, other):
+        return self._op(other, operator.sub)
     
     def __iadd__(self, other):
-        for k in self.keys():
-            if self[k]!=None and other[k]!=None:
-                self[k] += other[k]
-            else:
-                self[k] = None
-        return self
+        return self._iop(other, operator.iadd)
     
     def __isub__(self, other):
-        for k in self.keys():
-            if self[k]!=None and other[k]!=None:
-                self[k] -= other[k]
-            else:
-                self[k] = None
-        return self
+        return self._iop(other, operator.isub)
     
     def __div__(self, other):
-        ret = Field()
-        for k in self.keys():
-            ret[k] = (self[k] / other[k]) if (self[k]!=None and other[k]!=None) else None
-        return ret
+        return self._op(other, operator.div)
     
     def __mul__(self, other):
-        ret = Field()
-        for k in self.keys():
-            ret[k] = (self[k] * other[k]) if (self[k]!=None and other[k]!=None) else None
-        return ret
+        return self._op(other, operator.mul)
+    
+    def __rdiv__(self, other):
+        return self._rop(other, operator.div)
+    
+    def __rmul__(self, other):
+        return self._rop(other, operator.mul)
     
     def __idiv__(self, other):
-        for k in self.keys():
-            if self[k]!=None and other[k]!=None:
-                self[k] /= other[k]
-            else:
-                self[k] = None
-        return self
+        return self._iop(other, operator.idiv)
     
     def __imul__(self, other):
-        for k in self.keys():
-            if self[k]!=None and other[k]!=None:
-                self[k] *= other[k]
-            else:
-                self[k] = None
-        return self
+        return self._iop(other, operator.imul)
     
     def __le__(self, other):
-        ret = Field()
-        for k in self.keys():
-            ret[k] = (self[k] <= other[k]) if (self[k]!=None and other[k]!=None) else None
-        return ret
+        return self._op(other, operator.le)
+    
+    def __ge__(self, other):
+        return self._op(other, operator.ge)
     
     def not_none_values(self):
         ret = []
@@ -196,12 +225,6 @@ class BaseDevice(object):
                 ret[nbr] = nbr.dt
         return ret
     
-    def fieldize(self, val):
-        ret = Field()
-        for nbr in self._nbrs + [self]:
-            ret[nbr] = val
-        return ret
-    
     def deself(self, field):
         f = Field(field.copy())
         del f[self]
@@ -270,7 +293,7 @@ class BaseDevice(object):
 class Cloud(object):      
     def __init__(self, klass=None, args=None, num_devices=500, devices=None, 
                 steps_per_frame=1, desired_fps=50, radio_range=0.1, width=1000, height=1000, 
-                window_title=None, _3D=False):
+                window_title=None, _3D=False, headless=False):
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
         
         if not devices:
@@ -298,6 +321,7 @@ class Cloud(object):
         self.height = height
         self.window_title = window_title if window_title else klass.__name__
         self.radio_range = radio_range
+        self.headless = headless
 
     def update(self, time_passed):
         for i in range(self.steps_per_frame):
@@ -321,3 +345,18 @@ class Cloud(object):
 
 from pymorphous.lib import *
 from pymorphous.draw import *
+
+def spawn_cloud(*args, **kwargs):
+    epsilon = 0.01
+    cloud = Cloud(*args, **kwargs)
+    
+    if cloud.headless:
+        last_time = time.time()
+        while True:
+            now = time.time()
+            delta = now - last_time
+            delta = delta if delta!=0 else epsilon
+            cloud.update(delta)
+            last_time = now
+    else:
+        display_cloud(cloud)

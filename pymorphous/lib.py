@@ -15,7 +15,7 @@ class Device(BaseDevice):
             (* epsilon
              (sum-hood (- (nbr val) val))))))
         """
-        return val + epsilon * self.sum_hood(self.nbr(val, extra_key) - self.fieldize(val))
+        return val + epsilon * self.sum_hood(self.nbr(val, extra_key) - val)
     
     class Gradient:
         """
@@ -33,11 +33,11 @@ class Device(BaseDevice):
             self.v = 0
             
         def value(self, src):
-            new_d = self.device.nbr(self.d) + self.device.nbr_range() + self.device.fieldize(self.v) * (self.device.nbr_lag() + self.device.fieldize(self.device.dt))
+            new_d = self.device.nbr(self.d) + self.device.nbr_range() + self.v * (self.device.nbr_lag() + self.device.dt)
             then_tup = (self.device.min_hood_plus(self.device.nbr(self.d) + self.device.nbr_range()), 0)
             v0 = self.device.radio_range / (self.device.dt * 12)
             else_tup = (self.d + v0 * self.device.dt, v0)
-            else_ = mux(self.device.max_hood_plus(new_d <= self.device.fieldize(self.d)), then_tup, else_tup)
+            else_ = mux(self.device.max_hood_plus(new_d <= self.d), then_tup, else_tup)
             (self.d, self.v) = mux(src, (0,0), else_)
             return self.d
-    
+        
