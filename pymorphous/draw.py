@@ -30,15 +30,84 @@ class Window(QtGui.QWidget):
         
         
 class GLWidget(QtOpenGL.QGLWidget):
+    xRotationChanged = QtCore.Signal(int)
+    yRotationChanged = QtCore.Signal(int)
+    zRotationChanged = QtCore.Signal(int)
+    
     def __init__(self, cloud, parent=None):
         QtOpenGL.QGLWidget.__init__(self, parent)
         
         self.cloud = cloud
-         
+        
+        self.xRot = 0
+        self.yRot = 0
+        self.zRot = 0
+        
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.myupdate)
         timer.start(1000.0/self.cloud.desired_fps)
         self.last_time = time.time()
+    
+    def __del__(self):
+        self.makeCurrent()
+        glDeleteLists(self.deviceList, 1)
+        for i in range(3):
+            glDeleteLists(self.ledList[i], 1)
+    
+    @property
+    def xRotation(self):
+        return self.xRot
+
+    @property
+    def yRotation(self):
+        return self.yRot
+
+    @property
+    def zRotation(self):
+        return self.zRot
+    
+    @xRotation.setter
+    def xRotation(self, angle):
+        self.normalizeAngle(angle)
+
+        if angle != self.xRot:
+            self.xRot = angle
+            self.xRotationChanged.emit(angle)
+            self.updateGL()
+
+    @yRotation.setter
+    def yRotation(self, angle):
+        self.normalizeAngle(angle)
+
+        if angle != self.yRot:
+            self.yRot = angle
+            self.yRotationChanged.emit(angle)
+            self.updateGL()
+
+    @zRotation.setter
+    def zRotation(self, angle):
+        self.normalizeAngle(angle)
+
+        if angle != self.zRot:
+            self.zRot = angle
+            self.zRotationChanged.emit(angle)
+            self.updateGL()
+
+    def mousePressEvent(self, event):
+        self.lastPos = event.pos()
+
+    def mouseMoveEvent(self, event):
+        dx = event.x() - self.lastPos.x()
+        dy = event.y() - self.lastPos.y()
+
+        if event.buttons() & QtCore.Qt.LeftButton:
+            self.xRotation = self.xRot + 8 * dy
+            self.yRotation = self.yRot + 8 * dx
+        elif event.buttons() & QtCore.Qt.RightButton:
+            self.xRotation = self.xRot + 8 * dy
+            self.zRotation = self.zRot + 8 * dx
+
+        self.lastPos = event.pos()
     
     def minimumSizeHint(self):
         return QtCore.QSize(50, 50)
@@ -67,7 +136,11 @@ class GLWidget(QtOpenGL.QGLWidget):
     
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
-        glRotatef(1, 0, 1, 0)
+
+        glPushMatrix()
+        glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
+        glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
+        glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
         for d in self.cloud.devices:
             x = d.x*50
             y = d.y*50
@@ -86,6 +159,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                     glColor3f(1.0 if i==0 else 0.0, 1.0 if i==1 else 0.0, 1.0 if i==2 else 0.0)
                     glCallList(self.ledList[i])
                     glPopMatrix()
+        glPopMatrix()
     
     def resizeGL(self, width, height):
         side = min(width, height)
@@ -102,8 +176,14 @@ class GLWidget(QtOpenGL.QGLWidget):
         delta = now - self.last_time
         self.cloud.update(delta)
         self.last_time = now
-        self.updateGL()    
+        self.updateGL()
+    
+    def normalizeAngle(self, angle):
+        while (angle < 0):
+            angle += 360 * 16
 
+        while (angle > 360 * 16):
+            angle -= 360 * 16
 def display_cloud(cloud):
     app = QtGui.QApplication(sys.argv)
     window = Window(cloud = cloud)
