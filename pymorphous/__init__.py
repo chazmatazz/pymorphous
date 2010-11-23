@@ -291,9 +291,9 @@ class BaseDevice(object):
         return self.max_hood(self.deself(field))
     
 class Cloud(object):      
-    def __init__(self, klass=None, args=None, num_devices=500, devices=None, 
+    def __init__(self, klass=None, args=None, num_devices=1000, devices=None, 
                 steps_per_frame=1, desired_fps=50, radio_range=0.1, width=1000, height=1000, 
-                window_title=None, _3D=False, headless=False):
+                window_title=None, _3D=False, headless=False, display_leds=True):
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
         
         if not devices:
@@ -322,6 +322,7 @@ class Cloud(object):
         self.window_title = window_title if window_title else klass.__name__
         self.radio_range = radio_range
         self.headless = headless
+        self.display_leds = display_leds
 
     def update(self, time_passed):
         epsilon = 0.01

@@ -65,9 +65,6 @@ class UniqueColor(object):
         return self.blue / 255.0
         
 class GLWidget(QtOpenGL.QGLWidget):
-    xRotationChanged = QtCore.Signal(int)
-    yRotationChanged = QtCore.Signal(int)
-    zRotationChanged = QtCore.Signal(int)
     
     def __init__(self, cloud, parent=None):
         QtOpenGL.QGLWidget.__init__(self, parent)
@@ -154,7 +151,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         if angle != self.xRot:
             self.xRot = angle
-            self.xRotationChanged.emit(angle)
             self.updateGL()
 
     @yRotation.setter
@@ -163,7 +159,6 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         if angle != self.yRot:
             self.yRot = angle
-            self.yRotationChanged.emit(angle)
             self.updateGL()
 
     @zRotation.setter
@@ -172,13 +167,11 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         if angle != self.zRot:
             self.zRot = angle
-            self.zRotationChanged.emit(angle)
             self.updateGL()
 
     def mousePressEvent(self, event):
         self.mypaint(False)
         pixel = glReadPixels(event.pos().x(), event.pos().y(), 1, 1, GL_RGB, GL_BYTE)
-        print pixel[0][0].tolist()
         r = get_color_id(pixel[0][0].tolist())
         try:
             d = self.color_dict[r]
@@ -205,9 +198,27 @@ class GLWidget(QtOpenGL.QGLWidget):
     
     def keyPressEvent(self, event):
         key = event.key()
-        if key == QtCore.Qt.Key_T:
-            if self.selected_device:
-                self.selected_device.senses[0] = not self.selected_device.senses[0]
+        
+        sense_keys = [QtCore.Qt.Key_T, QtCore.Qt.Key_Y, QtCore.Qt.Key_U]
+        for i in range(len(sense_keys)):
+            if key == sense_keys[i]:
+                if self.selected_device:
+                    self.selected_device.senses[i] = not self.selected_device.senses[i]
+                    self.updateGL()
+                    
+        if key == QtCore.Qt.Key_L:
+            self.cloud.display_leds = not self.cloud.display_leds
+            self.updateGL()
+            
+        dirs = {QtCore.Qt.Key_Left: [-1,0],
+                QtCore.Qt.Key_Right: [1,0],
+                QtCore.Qt.Key_Up: [0,1],
+                QtCore.Qt.Key_Down: [0,-1]}
+        for (k,v) in dirs.items():
+            if key == k:
+                glTranslatef(10*v[0], 10*v[1], 0)
+                self.updateGL()
+        
             
     def minimumSizeHint(self):
         return QtCore.QSize(50, 50)
@@ -232,18 +243,29 @@ class GLWidget(QtOpenGL.QGLWidget):
             glPushMatrix()
             glTranslatef(x,y,z)
             if real:
-                glColor3f(1.0, 1.0, 1.0)
+                c = [0,0,0]
+                c[0] += (1.0 if d.senses[0] else 0.0)/2
+                c[1] += (1.0 if d.senses[0] else 0.0)/2
+                c[1] += (1.0 if d.senses[1] else 0.0)/2
+                c[2] += (1.0 if d.senses[1] else 0.0)/2
+                c[2] += (1.0 if d.senses[2] else 0.0)/2
+                c[0] += (1.0 if d.senses[2] else 0.0)/2
+                if c == [0,0,0]:
+                    c = [1.0,1.0,1.0]
+                    
+                glColor3f(c[0],c[1],c[2])
                 glCallList(self.bodyList)
                 if d == self.selected_device:
                     glColor3f(1.0, 1.0, 1.0)
                     glCallList(self.selectIndicatorList)
-                for i in range(3):
-                    if d.leds[i] != 0:
-                        glPushMatrix()
-                        glTranslatef(0,0,d.leds[i])
-                        glColor3f(1.0 if i==0 else 0.0, 1.0 if i==1 else 0.0, 1.0 if i==2 else 0.0)
-                        glCallList(self.ledLists[i])
-                        glPopMatrix()
+                if self.cloud.display_leds:
+                    for i in range(3):
+                        if d.leds[i] != 0:
+                            glPushMatrix()
+                            glTranslatef(0,0,d.leds[i])
+                            glColor3f(1.0 if i==0 else 0.0, 1.0 if i==1 else 0.0, 1.0 if i==2 else 0.0)
+                            glCallList(self.ledLists[i])
+                            glPopMatrix()
             else:
                 glColor3f(d.color_id.redf, d.color_id.greenf, d.color_id.bluef)
                 glCallList(self.selectList)
@@ -257,8 +279,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         glMatrixMode(GL_PROJECTION)
         
         gluPerspective(45.0,float(self.cloud.width)/self.cloud.height,0.1,200.0)    #setup lens
-        glTranslatef(-20.0, -40.0, -150.0)                #move back
-        glRotatef(60, 1, 60, 90)                       #orbit higher
+        glTranslatef(0, 0, -150.0)                #move back
+        #glRotatef(60, 1, 60, 90)                       #orbit higher
     
     def myupdate(self):
         now = time.time()
