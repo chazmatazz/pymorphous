@@ -8,6 +8,6 @@ class GradientDemo(Device):
         
     def step(self):
         self.red = self.senses[0]
-        self.green = self.gradient.value(self.senses[0])*50
+        self.green = self.gradient.value(self.senses[0])
 
 spawn_cloud(klass=GradientDemo)

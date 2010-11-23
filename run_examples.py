@@ -4,7 +4,7 @@ from os.path import splitext
 
 python_prog = "/usr/bin/python"
 prog = "./pymorphous.py"
-testsdir = "./examples/pymorphous"
+testsdir = "./examples"
 
 tests = os.listdir(testsdir)
 tests = filter(lambda t: splitext(t)[1] == '.py', tests)

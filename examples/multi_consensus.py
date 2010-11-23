@@ -3,7 +3,7 @@ import random
 
 class MultiConsensus(Device):
     def setup(self):
-        self.vals = [random.random() * 25, random.random() * 50, random.random() * 100]
+        self.vals = [random.random() * 25, random.random() * 25, random.random() * 25]
         
     def step(self):
         for i in range(len(self.vals)):

@@ -116,11 +116,10 @@ class NbrKeyError(Exception):
         return repr(self.value)
 
 class BaseDevice(object):
-    def __init__(self, pos, id, radio_range, cloud):
+    def __init__(self, pos, id, cloud):
         # pos is a numpy.array
         self._pos = pos
         self.id = id
-        self._radio_range = radio_range
         self.cloud = cloud
         self.leds = [0, 0, 0]
         self.senses = [0, 0, 0]
@@ -132,13 +131,8 @@ class BaseDevice(object):
     
     @property
     def radio_range(self):
-        return self._radio_range
+        return self.cloud.radio_range
     
-    @radio_range.setter
-    def radio_range(self, value):
-        self.cloud.connectivity_changed = True
-        self._radio_range = value
-        
     def move(self, vector):
         self.cloud.connectivity_changed = True
         self._pos += vector
@@ -289,19 +283,50 @@ class BaseDevice(object):
     def max_hood_plus(self, field):
         """ return the max over the field without self """
         return self.max_hood(self.deself(field))
-    
+
+LED_STACKING_MODE_DIRECT = 0
+LED_STACKING_MODE_OFFSET = 1
+LED_STACKING_MODE_INDEPENDENT = 2
+DEFAULT_DIM = [132,100,0]
+
 class Cloud(object):      
     def __init__(self, klass=None, args=None, num_devices=1000, devices=None, 
-                steps_per_frame=1, desired_fps=50, radio_range=0.1, width=1000, height=1000, 
-                window_title=None, _3D=False, headless=False, display_leds=True):
+                steps_per_frame=1, desired_fps=50, dim=DEFAULT_DIM, body_rad=None,
+                radio_range=15, window_width=1000, window_height=1000, 
+                window_title=None, _3D=False, headless=False, show_leds=True,
+                led_flat=False, led_stacking_mode=LED_STACKING_MODE_DIRECT, show_body=True, 
+                show_radio=False, grid=False):
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
+        
+        d = DEFAULT_DIM[:]
+        
+        if _3D:
+            d[2] = 100
+            
+        if len(dim) == 1:
+            self.dim = dim + d[1:]
+        elif len(dim) == 2:
+            self.dim = dim + d[2:]
+        else:
+            self.dim = dim
+        
+        self.grid = grid
         
         if not devices:
             devices = []
+            if self.grid:
+                d = 3 if self._3D else 2
+                side_len = math.floor(num_devices**(1.0/d))
             for i in range(num_devices):
-                d = klass(pos = numpy.array([random.random(), random.random(), random.random() if _3D else 0]),
+                if self.grid:
+                    if self._3D:
+                        pos = numpy.array([i/side_len, i % side_len, 0])
+                    else:
+                        pos = numpy.array([i/(side_len*side_len), (i/side_len) % side_len, i % side_len])
+                else:
+                    pos = numpy.array([random.random()*self.width, random.random()*self.height, random.random()*self.depth])
+                d = klass(pos = pos,
                           id = i,
-                          radio_range = radio_range, 
                           cloud = self)
                 devices += [d]
                 if hasattr(d, "setup"):
@@ -310,20 +335,41 @@ class Cloud(object):
                     else:
                         d.setup()
         self.devices = devices
+        
+        self.steps_per_frame = steps_per_frame
+        self.desired_fps = desired_fps
+
+            
+        self.body_rad = body_rad if body_rad else (0.087*(self.width*self.height/len(devices)))**0.5
+        
+        self.radio_range = radio_range
+        self.window_width = window_width
+        self.window_height = window_height
+        self.window_title = window_title if window_title else klass.__name__
+
+        self.headless = headless
+        self.show_leds = show_leds
+        self.led_flat = led_flat
+        self.led_stacking_mode = led_stacking_mode
+        self.show_body = show_body
+        self.show_radio= show_radio
               
         self.connectivity_changed = True
         
         self.mss = []
 
-        self.steps_per_frame = steps_per_frame
-        self.desired_fps = desired_fps
-        self.width = width
-        self.height = height
-        self.window_title = window_title if window_title else klass.__name__
-        self.radio_range = radio_range
-        self.headless = headless
-        self.display_leds = display_leds
-
+    @property
+    def width(self):
+        return self.dim[0]
+    
+    @property
+    def height(self):
+        return self.dim[1]
+    
+    @property
+    def depth(self):
+        return self.dim[2]
+    
     def update(self, time_passed):
         epsilon = 0.01
         time_passed = time_passed if time_passed!=0 else epsilon

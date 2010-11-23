@@ -3,7 +3,7 @@ import random
 
 class TripleConsensusSingleLine(Device):
     def setup(self):
-        self.vals = [random.random() * 50, random.random() * 100, random.random() * 200]
+        self.vals = [random.random() * 50, random.random() * 50, random.random() * 50]
         
     def step(self):
         self.leds = [self.vals[0], self.vals[1], self.vals[2]]
