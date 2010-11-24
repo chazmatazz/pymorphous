@@ -16,18 +16,28 @@ except ImportError:
                             QtGui.QMessageBox.NoButton)
     sys.exit(1)
 
-BACKGROUND = (0, 0, 0, 0)
-SIMPLE_BODY = (1, 0.25, 0, 0.8)
-SELECTED_DEVICE = (1,1,1,0.2)
-RADIO_RANGE_RING = (0.25, 0.25, 0.25, 0.8)
-USER_SENSOR_0 = (1, 0.5, 0, 0.8)
-USER_SENSOR_1 = (0.5, 0, 1, 0.8)
-USER_SENSOR_2 = (1, 0, 0.5, 0.8)
-_USER_SENSORS = [USER_SENSOR_0, USER_SENSOR_1, USER_SENSOR_2]
-RED_LED = (1, 0, 0, 0.8)
-GREEN_LED = (0, 1, 0, 0.8)
-BLUE_LED = (0, 0, 1, 0.8)
-_LEDS = [RED_LED, GREEN_LED, BLUE_LED]
+class _DrawDefaults(object):
+    def __init__(self):
+        self.BACKGROUND = (0, 0, 0, 0)
+        self.SIMPLE_BODY = (1, 0.25, 0, 0.8)
+        self.SELECTED_DEVICE = (1,1,1,0.2)
+        self.RADIO_RANGE_RING = (0.25, 0.25, 0.25, 0.8)
+        self.USER_SENSOR_0 = (1, 0.5, 0, 0.8)
+        self.USER_SENSOR_1 = (0.5, 0, 1, 0.8)
+        self.USER_SENSOR_2 = (1, 0, 0.5, 0.8)
+        self.RED_LED = (1, 0, 0, 0.8)
+        self.GREEN_LED = (0, 1, 0, 0.8)
+        self.BLUE_LED = (0, 0, 1, 0.8)
+    
+    @property
+    def _USER_SENSORS(self):
+        return [self.USER_SENSOR_0, self.USER_SENSOR_1, self.USER_SENSOR_2]
+    
+    @property
+    def _LEDS(self):
+        return [self.RED_LED, self.GREEN_LED, self.BLUE_LED]
+
+DRAW_DEFAULTS = _DrawDefaults()
 
 class Window(QtGui.QWidget):
     def __init__(self, cloud, parent=None):
@@ -108,7 +118,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def initializeGL(self):
         glEnable(GL_DEPTH_TEST)
-        glClearColor(*BACKGROUND)    
+        glClearColor(*DRAW_DEFAULTS.BACKGROUND)    
         glutInit()
         
         self.bodyList = glGenLists(1);
@@ -280,29 +290,30 @@ class GLWidget(QtOpenGL.QGLWidget):
             glTranslatef(x,y,z)
             if real:
                 if self.cloud.show_body:
-                    glColor4f(*SIMPLE_BODY)
+                    glColor4f(*DRAW_DEFAULTS.SIMPLE_BODY)
                     glCallList(self.bodyList)
                     for i in range(3):
-                        glColor4f(*_USER_SENSORS[i])
-                        glCallList(self.listSenses[i])
+                        if d.senses[i] != 0:
+                            glColor4f(*DRAW_DEFAULTS._USER_SENSORS[i])
+                            glCallList(self.listSenses[i])
                     if d == self.selected_device:
-                        glColor4f(*SELECTED_DEVICE)
+                        glColor4f(*DRAW_DEFAULTS.SELECTED_DEVICE)
                         glCallList(self.listSelectIndicator)
                         
                 if self.cloud.show_radio:
-                    glColor4f(*RADIO_RANGE_RING)
+                    glColor4f(*DRAW_DEFAULTS.RADIO_RANGE_RING)
                     glCallList(self.listRadio)
                 
                 if self.cloud.show_leds:
                     
                     leds = [0,0,0]
                     if not self.cloud.led_flat:
-                        if self.cloud.led_stacking_mode == LED_STACKING_MODE_DIRECT:
+                        if self.cloud.led_stacking_mode == CONSTANTS.LED_STACKING_MODE_DIRECT:
                             acc = 0
                             for i in range(3):
                                 leds[i] = d.leds[i]+acc
                                 acc += d.leds[i]
-                        elif self.cloud.led_stacking_mode == LED_STACKING_MODE_OFFSET:
+                        elif self.cloud.led_stacking_mode == CONSTANTS.LED_STACKING_MODE_OFFSET:
                             for i in range(3):
                                 leds[i] = d.leds[i]+i
                         else:
@@ -313,7 +324,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                         if d.leds[i] != 0:
                             glPushMatrix()
                             glTranslatef(0,0,leds[i])
-                            glColor4f(*_LEDS[i])
+                            glColor4f(*DRAW_DEFAULTS._LEDS[i])
                             glCallList(self.listLeds[i])
                             glPopMatrix()
             else:

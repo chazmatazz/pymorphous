@@ -4,6 +4,7 @@ import inspect
 import sys
 from scipy.spatial import KDTree
 import operator
+import math
 
 PRINT_MS = False
 SAFE = False
@@ -127,6 +128,7 @@ class BaseDevice(object):
         self._dict = {}
         self._old_dict = {}
         self._dt = 0
+        self._nbr_range = Field()
         self.root_frame = None
     
     @property
@@ -203,13 +205,11 @@ class BaseDevice(object):
                 ret[nbr] = None
         return ret
     
+    @property
     def nbr_range(self):
-        ret = Field()
-        for nbr in self._nbrs + [self]:
-            delta = self.pos - nbr.pos
-            ret[nbr] = numpy.dot(delta, delta)**0.5
-        return ret
+        return self._nbr_range
     
+    @property
     def nbr_lag(self):
         ret = Field()
         for nbr in self._nbrs + [self]:
@@ -262,7 +262,31 @@ class BaseDevice(object):
     @blue.setter
     def blue(self, val):
         self.leds[2] = val
-            
+
+    @property
+    def sense0(self):
+        return self.senses[0]
+    
+    @sense0.setter
+    def sense0(self, val):
+        self.senses[0] = val
+        
+    @property
+    def sense1(self):
+        return self.senses[1]
+    
+    @sense1.setter
+    def sense1(self, val):
+        self.senses[1] = val
+        
+    @property
+    def sense2(self):
+        return self.senses[2]
+    
+    @blue.setter
+    def sense2(self, val):
+        self.senses[2] = val
+        
     def sum_hood(self, field):
         return sum(field.not_none_values()+[0])
     
@@ -284,29 +308,72 @@ class BaseDevice(object):
         """ return the max over the field without self """
         return self.max_hood(self.deself(field))
 
-LED_STACKING_MODE_DIRECT = 0
-LED_STACKING_MODE_OFFSET = 1
-LED_STACKING_MODE_INDEPENDENT = 2
-DEFAULT_DIM = [132,100,0]
+class _Constants(object):
+    """ Constants """
+    def __init__(self):
+        self.LED_STACKING_MODE_DIRECT = 0
+        self.LED_STACKING_MODE_OFFSET = 1
+        self.LED_STACKING_MODE_INDEPENDENT = 2
+        
+CONSTANTS = _Constants()
+    
+class _Defaults(object):
+    """
+    So that we can override these in a test suite
+    """
+    def __init__(self):
+        self.NUM_DEVICES = 1000
+        self.STEPS_PER_FRAME = 1
+        self.DESIRED_FPS = 50
+        self.DIM = [132,100,0]
+        self.BODY_RAD = None
+        self.RADIO_RANGE = 15
+        self.WINDOW_WIDTH = 1000
+        self.WINDOW_HEIGHT = 1000
+        self.WINDOW_TITLE = None
+        self._3D = False
+        self.HEADLESS = False
+        self.SHOW_LEDS = True
+        self.LED_FLAT = False
+        self.LED_STACKING_MODE = CONSTANTS.LED_STACKING_MODE_DIRECT
+        self.SHOW_BODY = True
+        self.SHOW_RADIO = False
+        self.GRID = False
+
+DEFAULTS = _Defaults()
 
 class Cloud(object):      
-    def __init__(self, klass=None, args=None, num_devices=1000, devices=None, 
-                steps_per_frame=1, desired_fps=50, dim=DEFAULT_DIM, body_rad=None,
-                radio_range=15, window_width=1000, window_height=1000, 
-                window_title=None, _3D=False, headless=False, show_leds=True,
-                led_flat=False, led_stacking_mode=LED_STACKING_MODE_DIRECT, show_body=True, 
-                show_radio=False, grid=False):
+    def __init__(self, 
+                 klass=None, 
+                 args=None, 
+                 num_devices=DEFAULTS.NUM_DEVICES, 
+                 devices=None, 
+                 steps_per_frame=DEFAULTS.STEPS_PER_FRAME, 
+                 desired_fps=DEFAULTS.DESIRED_FPS, 
+                 dim=DEFAULTS.DIM, 
+                 body_rad=DEFAULTS.BODY_RAD,
+                 radio_range=DEFAULTS.RADIO_RANGE, 
+                 window_width=DEFAULTS.WINDOW_WIDTH, 
+                 window_height=DEFAULTS.WINDOW_HEIGHT, 
+                 window_title=DEFAULTS.WINDOW_TITLE, 
+                 _3D=DEFAULTS._3D, 
+                 headless=DEFAULTS.HEADLESS, 
+                 show_leds=DEFAULTS.SHOW_LEDS,
+                 led_flat=DEFAULTS.LED_FLAT, 
+                 led_stacking_mode=DEFAULTS.LED_STACKING_MODE, 
+                 show_body=DEFAULTS.SHOW_BODY, 
+                 show_radio=DEFAULTS.SHOW_RADIO, 
+                 grid=DEFAULTS.GRID):
+        assert(klass or devices)
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
         
-        d = DEFAULT_DIM[:]
-        
         if _3D:
-            d[2] = 100
+            dim[2] = 100
             
         if len(dim) == 1:
-            self.dim = dim + d[1:]
+            self.dim = dim + DEFAULTS.DIM[1:]
         elif len(dim) == 2:
-            self.dim = dim + d[2:]
+            self.dim = dim + DEFAULTS.DIM[2:]
         else:
             self.dim = dim
         
@@ -315,16 +382,23 @@ class Cloud(object):
         if not devices:
             devices = []
             if self.grid:
-                d = 3 if self._3D else 2
+                d = 3 if self.dim[2] else 2
                 side_len = math.floor(num_devices**(1.0/d))
             for i in range(num_devices):
                 if self.grid:
-                    if self._3D:
-                        pos = numpy.array([i/side_len, i % side_len, 0])
+                    if self.dim[2]!=0:
+                        pos = numpy.array([self.width*math.floor(i/(side_len*side_len)),
+                                           self.height*((i/side_len) % side_len),
+                                           self.depth*(i % side_len)])/side_len
+                        pos -= numpy.array([self.width/2, self.height/2, self.depth/2])
                     else:
-                        pos = numpy.array([i/(side_len*side_len), (i/side_len) % side_len, i % side_len])
+                        pos = numpy.array([self.width*math.floor(i/side_len), 
+                                           self.height*(i % side_len), 0])/side_len
+                        pos -= numpy.array([self.width/2, self.height/2, 0])
                 else:
-                    pos = numpy.array([random.random()*self.width, random.random()*self.height, random.random()*self.depth])
+                    pos = numpy.array([(random.random()-0.5)*self.width, 
+                                       (random.random()-0.5)*self.height, 
+                                       (random.random()-0.5)*self.depth])
                 d = klass(pos = pos,
                           id = i,
                           cloud = self)
@@ -388,6 +462,11 @@ class Cloud(object):
                 for (i,j) in kdtree.query_pairs(self.radio_range):
                     self.devices[i]._nbrs += [self.devices[j]]
                     self.devices[j]._nbrs += [self.devices[i]]
+                for d in self.devices:
+                    d._nbr_range = Field()
+                    for n in d._nbrs + [d]:
+                        delta = d.pos - n.pos
+                        d._nbr_range[n] = numpy.dot(delta, delta)**0.5
             self.connectivity_changed = False
             for d in self.devices:
                 d._step(milliseconds)

@@ -3,10 +3,10 @@ import random
 
 class MinPlusDemo(Device):
     def setup(self):
-        self.senses[0] = random.random()
+        self.sense0 = random.random()
         
     def step(self):
-        self.red = self.senses[0]
-        self.green = self.min_hood_plus(self.nbr(self.senses[0]))
+        self.red = self.sense0
+        self.green = self.min_hood_plus(self.nbr(self.sense0))
 
 spawn_cloud(klass=MinPlusDemo)

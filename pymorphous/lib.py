@@ -33,8 +33,8 @@ class Device(BaseDevice):
             self.v = 0
             
         def value(self, src):
-            new_d = self.device.nbr(self.d) + self.device.nbr_range() + self.v * (self.device.nbr_lag() + self.device.dt)
-            then_tup = (self.device.min_hood_plus(self.device.nbr(self.d) + self.device.nbr_range()), 0)
+            new_d = self.device.nbr(self.d) + self.device.nbr_range + self.v * (self.device.nbr_lag + self.device.dt)
+            then_tup = (self.device.min_hood_plus(self.device.nbr(self.d) + self.device.nbr_range), 0)
             v0 = self.device.radio_range / (self.device.dt * 12)
             else_tup = (self.d + v0 * self.device.dt, v0)
             else_ = mux(self.device.max_hood_plus(new_d <= self.d), then_tup, else_tup)
