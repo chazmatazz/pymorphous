@@ -117,9 +117,10 @@ class NbrKeyError(Exception):
         return repr(self.value)
 
 class BaseDevice(object):
-    def __init__(self, pos, id, cloud):
-        # pos is a numpy.array
-        self._pos = pos
+    def __init__(self, coord, id, cloud):
+        # coord is a numpy.array
+        self._coord = coord
+        self._velocity = numpy.array([0,0,0])
         self.id = id
         self.cloud = cloud
         self.leds = [0, 0, 0]
@@ -135,45 +136,48 @@ class BaseDevice(object):
     def radio_range(self):
         return self.cloud.radio_range
     
-    def move(self, vector):
-        self.cloud.connectivity_changed = True
-        self._pos += vector
+    def move(self, velocity):
+        self._velocity = velocity
+    
+    @property
+    def velocity(self):
+        return self._velocity
     
     @property
     def x(self):
-        return self._pos[0]
+        return self._coord[0]
     
     @x.setter
     def x(self, value):
-        self.cloud.connectivity_changed = True
-        self._pos[0] = value
+        self.cloud.coord_changed = True
+        self._coord[0] = value
 
     @property
     def y(self):
-        return self._pos[1]
+        return self._coord[1]
     
     @y.setter
     def y(self, value):
-        self.cloud.connectivity_changed = True
-        self._pos[1] = value
+        self.cloud.coord_changed = True
+        self._coord[1] = value
         
     @property
     def z(self):
-        return self._pos[2]
+        return self._coord[2]
     
     @z.setter
     def z(self, value):
-        self.cloud.connectivity_changed = True
-        self._pos[2] = value  
+        self.cloud.coord_changed = True
+        self._coord[2] = value  
     
     @property
-    def pos(self):
-        return self._pos
+    def coord(self):
+        return self._coord
     
-    @pos.setter
-    def pos(self, new_pos):
-        self.cloud.connectivity_changed = True
-        self._pos = new_pos
+    @coord.setter
+    def coord(self, new_coord):
+        self.cloud.coord_changed = True
+        self._coord = new_coord
     
     def nbr(self, val, extra_key=None):
         if SAFE:
@@ -235,6 +239,9 @@ class BaseDevice(object):
         self.step()
         self._old_dict = self._dict
         self._dict = {}
+        if numpy.any(self.velocity):
+            self.coord_changed = True
+            self.coord += self.velocity
         
     def __repr__(self):
         return "#%s" % self.id
@@ -308,6 +315,8 @@ class BaseDevice(object):
         """ return the max over the field without self """
         return self.max_hood(self.deself(field))
 
+
+
 class _Constants(object):
     """ Constants """
     def __init__(self):
@@ -316,7 +325,10 @@ class _Constants(object):
         self.LED_STACKING_MODE_INDEPENDENT = 2
         
 CONSTANTS = _Constants()
-    
+
+from pymorphous.lib import *
+from pymorphous.simulator import *
+
 class _Defaults(object):
     """
     So that we can override these in a test suite
@@ -339,6 +351,7 @@ class _Defaults(object):
         self.SHOW_BODY = True
         self.SHOW_RADIO = False
         self.GRID = False
+        self.USE_GRAPHICS = simulator
 
 DEFAULTS = _Defaults()
 
@@ -363,7 +376,8 @@ class Cloud(object):
                  led_stacking_mode=DEFAULTS.LED_STACKING_MODE, 
                  show_body=DEFAULTS.SHOW_BODY, 
                  show_radio=DEFAULTS.SHOW_RADIO, 
-                 grid=DEFAULTS.GRID):
+                 grid=DEFAULTS.GRID, 
+                 use_graphics=DEFAULTS.USE_GRAPHICS):
         assert(klass or devices)
         assert(steps_per_frame == int(steps_per_frame) and steps_per_frame > 0)
         
@@ -387,19 +401,19 @@ class Cloud(object):
             for i in range(num_devices):
                 if self.grid:
                     if self.dim[2]!=0:
-                        pos = numpy.array([self.width*math.floor(i/(side_len*side_len)),
+                        coord = numpy.array([self.width*math.floor(i/(side_len*side_len)),
                                            self.height*((i/side_len) % side_len),
                                            self.depth*(i % side_len)])/side_len
-                        pos -= numpy.array([self.width/2, self.height/2, self.depth/2])
+                        coord -= numpy.array([self.width/2, self.height/2, self.depth/2])
                     else:
-                        pos = numpy.array([self.width*math.floor(i/side_len), 
+                        coord = numpy.array([self.width*math.floor(i/side_len), 
                                            self.height*(i % side_len), 0])/side_len
-                        pos -= numpy.array([self.width/2, self.height/2, 0])
+                        coord -= numpy.array([self.width/2, self.height/2, 0])
                 else:
-                    pos = numpy.array([(random.random()-0.5)*self.width, 
+                    coord = numpy.array([(random.random()-0.5)*self.width, 
                                        (random.random()-0.5)*self.height, 
                                        (random.random()-0.5)*self.depth])
-                d = klass(pos = pos,
+                d = klass(coord = coord,
                           id = i,
                           cloud = self)
                 devices += [d]
@@ -427,8 +441,9 @@ class Cloud(object):
         self.led_stacking_mode = led_stacking_mode
         self.show_body = show_body
         self.show_radio= show_radio
+        self.use_graphics = use_graphics
               
-        self.connectivity_changed = True
+        self.coord_changed = True
         
         self.mss = []
 
@@ -454,8 +469,8 @@ class Cloud(object):
                 _mss = self.mss[10:]
                 if(len(_mss) % 100):
                     print "milliseconds=%s" % _mss[len(_mss)-1]
-            if self.connectivity_changed:
-                point_matrix = numpy.array([d.pos for d in self.devices])
+            if self.coord_changed:
+                point_matrix = numpy.array([d.coord for d in self.devices])
                 kdtree = KDTree(point_matrix)
                 for d in self.devices:
                     d._nbrs = []
@@ -465,14 +480,11 @@ class Cloud(object):
                 for d in self.devices:
                     d._nbr_range = Field()
                     for n in d._nbrs + [d]:
-                        delta = d.pos - n.pos
+                        delta = d.coord - n.coord
                         d._nbr_range[n] = numpy.dot(delta, delta)**0.5
-            self.connectivity_changed = False
+            self.coord_changed = False
             for d in self.devices:
                 d._step(milliseconds)
-
-from pymorphous.lib import *
-from pymorphous.draw import *
 
 def spawn_cloud(*args, **kwargs):
     cloud = Cloud(*args, **kwargs)
@@ -484,4 +496,4 @@ def spawn_cloud(*args, **kwargs):
             cloud.update(delta)
             last_time = now
     else:
-        display_cloud(cloud)
+        cloud.use_graphics(cloud)

@@ -1,6 +1,6 @@
 import time
 
-from pymorphous import *
+import pymorphous
 
 from PySide import QtCore, QtGui, QtOpenGL
 
@@ -16,7 +16,7 @@ except ImportError:
                             QtGui.QMessageBox.NoButton)
     sys.exit(1)
 
-class _DrawDefaults(object):
+class _SimulatorDefaults(object):
     def __init__(self):
         self.BACKGROUND = (0, 0, 0, 0)
         self.SIMPLE_BODY = (1, 0.25, 0, 0.8)
@@ -37,7 +37,7 @@ class _DrawDefaults(object):
     def _LEDS(self):
         return [self.RED_LED, self.GREEN_LED, self.BLUE_LED]
 
-DRAW_DEFAULTS = _DrawDefaults()
+SIMULATOR_DEFAULTS = _SimulatorDefaults()
 
 class Window(QtGui.QWidget):
     def __init__(self, cloud, parent=None):
@@ -118,13 +118,13 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def initializeGL(self):
         glEnable(GL_DEPTH_TEST)
-        glClearColor(*DRAW_DEFAULTS.BACKGROUND)    
+        glClearColor(*SIMULATOR_DEFAULTS.BACKGROUND)    
         glutInit()
         
-        self.bodyList = glGenLists(1);
-        if not self.bodyList:
+        self.listSimpleBody = glGenLists(1);
+        if not self.listSimpleBody:
             raise SystemError("""Unable to generate display list using glGenLists""")
-        glNewList(self.bodyList, GL_COMPILE)
+        glNewList(self.listSimpleBody, GL_COMPILE)
         glutWireSphere(0.8, 2, 2)
         glEndList()
         
@@ -290,30 +290,30 @@ class GLWidget(QtOpenGL.QGLWidget):
             glTranslatef(x,y,z)
             if real:
                 if self.cloud.show_body:
-                    glColor4f(*DRAW_DEFAULTS.SIMPLE_BODY)
-                    glCallList(self.bodyList)
+                    glColor4f(*SIMULATOR_DEFAULTS.SIMPLE_BODY)
+                    glCallList(self.listSimpleBody)
                     for i in range(3):
                         if d.senses[i] != 0:
-                            glColor4f(*DRAW_DEFAULTS._USER_SENSORS[i])
+                            glColor4f(*SIMULATOR_DEFAULTS._USER_SENSORS[i])
                             glCallList(self.listSenses[i])
                     if d == self.selected_device:
-                        glColor4f(*DRAW_DEFAULTS.SELECTED_DEVICE)
+                        glColor4f(*SIMULATOR_DEFAULTS.SELECTED_DEVICE)
                         glCallList(self.listSelectIndicator)
                         
                 if self.cloud.show_radio:
-                    glColor4f(*DRAW_DEFAULTS.RADIO_RANGE_RING)
+                    glColor4f(*SIMULATOR_DEFAULTS.RADIO_RANGE_RING)
                     glCallList(self.listRadio)
                 
                 if self.cloud.show_leds:
                     
                     leds = [0,0,0]
                     if not self.cloud.led_flat:
-                        if self.cloud.led_stacking_mode == CONSTANTS.LED_STACKING_MODE_DIRECT:
+                        if self.cloud.led_stacking_mode == pymorphous.CONSTANTS.LED_STACKING_MODE_DIRECT:
                             acc = 0
                             for i in range(3):
                                 leds[i] = d.leds[i]+acc
                                 acc += d.leds[i]
-                        elif self.cloud.led_stacking_mode == CONSTANTS.LED_STACKING_MODE_OFFSET:
+                        elif self.cloud.led_stacking_mode == pymorphous.CONSTANTS.LED_STACKING_MODE_OFFSET:
                             for i in range(3):
                                 leds[i] = d.leds[i]+i
                         else:
@@ -324,7 +324,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                         if d.leds[i] != 0:
                             glPushMatrix()
                             glTranslatef(0,0,leds[i])
-                            glColor4f(*DRAW_DEFAULTS._LEDS[i])
+                            glColor4f(*SIMULATOR_DEFAULTS._LEDS[i])
                             glCallList(self.listLeds[i])
                             glPopMatrix()
             else:
@@ -358,7 +358,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         while (angle > 360 * 16):
             angle -= 360 * 16
             
-def display_cloud(cloud):
+def simulator(cloud):
     app = QtGui.QApplication(sys.argv)
     window = Window(cloud = cloud)
     window.show()
