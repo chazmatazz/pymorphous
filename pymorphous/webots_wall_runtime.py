@@ -3,13 +3,17 @@
 
 Defines the wall device
 public:
-WebotsWallRuntimeImplementation
+RuntimeImplementation
 """
 
 import time
-import controller # webots
+import sys
+import inspect
+import webots_mock as controller
 import uuid
-from pymorphous import Field, NbrKeyError
+import pymorphous.simulator_runtime
+
+_USE_SAFE_NBR = False
 
 class _Message(object):
     def __init__(self, id, time, data):
@@ -17,9 +21,10 @@ class _Message(object):
         self._time = time
         self._data = data
         
-class _WebotsWallDevice(controller.Robot):
-    def __init__(self, id):
-        controller.Robot.__init__()
+class _BaseDevice(controller.Robot):
+    def __init__(self, settings, id, *args, **kwargs):
+        super(_BaseDevice, self).__init__(self, *args, **kwargs)
+        self.settings = settings
         self._id = id
         self._fields = {} # dict of fields
         self._new_fields = {} # dict of fields
@@ -46,12 +51,16 @@ class _WebotsWallDevice(controller.Robot):
         
     @property
     def senses(self):
-        return self._senses
+        return [0,0,0]
     
     @senses.setter
     def senses(self, value):
-        self._senses = value
+        pass
 
+    @property
+    def radio_range(self):
+        return 0
+    
     def move(self, velocity):
         self._velocity = velocity
     
@@ -105,38 +114,30 @@ class _WebotsWallDevice(controller.Robot):
                 frames += [frame]
             key = repr(["%s:%d" % (f.f_code.co_filename, f.f_lineno) for f in frames])
         if extra_key:
-            return self._nbr("%s%s" % (key, extra_key), val)
+            return self._nbr("%s%s" % (key, extra_key), value)
         else:
-            return self._nbr(key, val)
+            return self._nbr(key, value)
             
     def _nbr(self, b, value):        
         if hasattr(self._data, b):
             raise NbrKeyError("Runtime exception in nbr")
         self._data[b] = value
-        return getattr(self._fields, b, Field())
+        return getattr(self._fields, b, pymorphous.simulator_runtime._Field())
     
     @property
     def nbr_range(self):
-        return self._nbr_range
+        return pymorphous.simulator_runtime._Field()
     
     @property
     def nbr_lag(self):
-        ret = Field()
-        for nbr in self._nbrs + [self]:
-            if nbr == self:
-                ret[nbr] = 0
-            else:
-                ret[nbr] = nbr.dt
-        return ret
+        return pymorphous.simulator_runtime._Field()
     
     def deself(self, field):
-        f = Field(field.copy())
-        del f[self]
-        return f
+        return field
     
     @property
     def dt(self):
-        return self._dt
+        return 0.01
         
     def dostep(self, dt):
         if not self._root_frame:
@@ -187,12 +188,22 @@ class _WebotsWallDevice(controller.Robot):
                     self._fields[id] = v
         controller.enable_interrupts()
 
-def _webots_wall_spawn_cloud(*args, **kwargs):
+def _spawn_cloud(settings, klass=None, args=None, **kwargs):
     """ not sure how to implement """
-    pass
-
-class WebotsWallRuntimeImplementation(object):
-    def __init__(self):
-        self.FIELD = _SimulatorField # reuse from simulator_runtime
-        self.BASE = _WebotsWallBase
-        self.SPAWN_CLOUD = _webots_wall_spawn_cloud
+    o = klass(settings, uuid.uuid4())
+    if hasattr(o, 'setup'):
+        if args:
+            o.setup(*args)
+        else:
+            o.setup()
+    while True:
+        o.dostep()
+    
+class RuntimeImplementation(object):
+    def __init__(self, settings):
+        self.settings = settings
+        self._Field = pymorphous.simulator_runtime._Field
+        self._NbrKeyError = pymorphous.simulator_runtime._NbrKeyError
+        self._BaseDevice = _BaseDevice
+        self._spawn_cloud = _spawn_cloud
+        
