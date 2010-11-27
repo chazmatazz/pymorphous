@@ -1,6 +1,5 @@
 """
-public:
-RuntimeImplementation
+exposes an implementation
 """
 
 import random
@@ -125,7 +124,7 @@ class _Field(dict):
                 ret += [v]
         return ret
 
-class _Device(object):
+class _BaseDevice(object):
     def __init__(self, coord, id, cloud):
         # coord is a numpy.array
         self._coord = coord
@@ -392,12 +391,3 @@ def _spawn_cloud(settings, *args, **kwargs):
             last_time = now
     else:
         cloud.use_graphics(cloud)
-        
-        
-class RuntimeImplementation(object):
-    def __init__(self, settings):
-        self.settings = settings
-        self._Field = _Field
-        self._BaseDevice = _Device
-        self._NbrKeyError = _NbrKeyError
-        self._spawn_cloud = _spawn_cloud

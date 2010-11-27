@@ -2,8 +2,7 @@
 !!!!! This is pseudocode for the webots runtime. Untested! !!!!! 
 
 Defines the wall device
-public:
-RuntimeImplementation
+exposes an implementation
 """
 
 import time
@@ -11,7 +10,7 @@ import sys
 import inspect
 import webots_mock as controller
 import uuid
-import pymorphous.simulator_runtime
+from pymorphous.simulator_runtime import _Field, _NbrKeyError
 
 _USE_SAFE_NBR = False
 
@@ -120,17 +119,17 @@ class _BaseDevice(controller.Robot):
             
     def _nbr(self, b, value):        
         if hasattr(self._data, b):
-            raise NbrKeyError("Runtime exception in nbr")
+            raise _NbrKeyError("Runtime exception in nbr")
         self._data[b] = value
-        return getattr(self._fields, b, pymorphous.simulator_runtime._Field())
+        return getattr(self._fields, b, _Field())
     
     @property
     def nbr_range(self):
-        return pymorphous.simulator_runtime._Field()
+        return _Field()
     
     @property
     def nbr_lag(self):
-        return pymorphous.simulator_runtime._Field()
+        return _Field()
     
     def deself(self, field):
         return field
@@ -198,12 +197,3 @@ def _spawn_cloud(settings, klass=None, args=None, **kwargs):
             o.setup()
     while True:
         o.dostep()
-    
-class RuntimeImplementation(object):
-    def __init__(self, settings):
-        self.settings = settings
-        self._Field = pymorphous.simulator_runtime._Field
-        self._NbrKeyError = pymorphous.simulator_runtime._NbrKeyError
-        self._BaseDevice = _BaseDevice
-        self._spawn_cloud = _spawn_cloud
-        
