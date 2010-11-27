@@ -187,7 +187,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         while (angle > 360 * 16):
             angle -= 360 * 16
             
-def draw(cloud):
+def contrail_graphics(cloud):
     app = QtGui.QApplication(sys.argv)
     window = Window(cloud = cloud)
     window.show()

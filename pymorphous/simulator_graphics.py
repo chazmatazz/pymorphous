@@ -1,7 +1,10 @@
+"""
+Provides the simulator graphics implementation
+public:
+simulator_graphics
+"""
+
 import time
-
-import pymorphous
-
 from PySide import QtCore, QtGui, QtOpenGL
 
 try:
@@ -16,34 +19,13 @@ except ImportError:
                             QtGui.QMessageBox.NoButton)
     sys.exit(1)
 
-class _SimulatorDefaults(object):
-    def __init__(self):
-        self.BACKGROUND = (0, 0, 0, 0)
-        self.SIMPLE_BODY = (1, 0.25, 0, 0.8)
-        self.SELECTED_DEVICE = (1,1,1,0.2)
-        self.RADIO_RANGE_RING = (0.25, 0.25, 0.25, 0.8)
-        self.USER_SENSOR_0 = (1, 0.5, 0, 0.8)
-        self.USER_SENSOR_1 = (0.5, 0, 1, 0.8)
-        self.USER_SENSOR_2 = (1, 0, 0.5, 0.8)
-        self.RED_LED = (1, 0, 0, 0.8)
-        self.GREEN_LED = (0, 1, 0, 0.8)
-        self.BLUE_LED = (0, 0, 1, 0.8)
-    
-    @property
-    def _USER_SENSORS(self):
-        return [self.USER_SENSOR_0, self.USER_SENSOR_1, self.USER_SENSOR_2]
-    
-    @property
-    def _LEDS(self):
-        return [self.RED_LED, self.GREEN_LED, self.BLUE_LED]
+import pymorphous.simulator_constants
 
-SIMULATOR_DEFAULTS = _SimulatorDefaults()
-
-class Window(QtGui.QWidget):
+class _SimulatorWindow(QtGui.QWidget):
     def __init__(self, cloud, parent=None):
         QtGui.QWidget.__init__(self, parent)
 
-        self.glWidget = GLWidget(cloud)
+        self.glWidget = _SimulatorGLWidget(cloud)
         
         mainLayout = QtGui.QHBoxLayout()
         mainLayout.addWidget(self.glWidget)
@@ -52,16 +34,16 @@ class Window(QtGui.QWidget):
         self.setWindowTitle(self.tr(cloud.window_title))
 
 # the color code of the ground is 0
-color_id_counter = 1
+_color_id_counter = 1
 
-def get_color_id(lst):
+def _get_color_id(lst):
     return lst[0] + lst[1]*255 + lst[2]*255*255
 
-class UniqueColor(object):
+class _SimulatorUniqueColor(object):
     def __init__(self):
-        global color_id_counter
-        self.value = color_id_counter
-        color_id_counter += 1
+        global _color_id_counter
+        self.value = _color_id_counter
+        _color_id_counter += 1
         
     @property
     def red(self):
@@ -87,7 +69,7 @@ class UniqueColor(object):
     def bluef(self):
         return self.blue / 255.0
         
-class GLWidget(QtOpenGL.QGLWidget):
+class _SimulatorGLWidget(QtOpenGL.QGLWidget):
     
     def __init__(self, cloud, parent=None):
         QtOpenGL.QGLWidget.__init__(self, parent)
@@ -118,7 +100,7 @@ class GLWidget(QtOpenGL.QGLWidget):
 
     def initializeGL(self):
         glEnable(GL_DEPTH_TEST)
-        glClearColor(*SIMULATOR_DEFAULTS.BACKGROUND)    
+        glClearColor(*self.cloud.settings.graphics.background)    
         glutInit()
         
         self.listSimpleBody = glGenLists(1);
@@ -169,7 +151,7 @@ class GLWidget(QtOpenGL.QGLWidget):
         
         self.color_dict = {}
         for d in self.cloud.devices:
-            d.color_id = UniqueColor()
+            d.color_id = _SimulatorUniqueColor()
             self.color_dict[d.color_id.value] = d
     
     @property
@@ -211,7 +193,7 @@ class GLWidget(QtOpenGL.QGLWidget):
     def mousePressEvent(self, event):
         self.mypaint(False)
         pixel = glReadPixels(event.pos().x(), event.pos().y(), 1, 1, GL_RGB, GL_BYTE)
-        r = get_color_id(pixel[0][0].tolist())
+        r = (pixel[0][0].tolist())
         try:
             d = self.color_dict[r]
             if d == self.selected_device:
@@ -290,30 +272,30 @@ class GLWidget(QtOpenGL.QGLWidget):
             glTranslatef(x,y,z)
             if real:
                 if self.cloud.show_body:
-                    glColor4f(*SIMULATOR_DEFAULTS.SIMPLE_BODY)
+                    glColor4f(*self.cloud.settings.graphics.simple_body)
                     glCallList(self.listSimpleBody)
                     for i in range(3):
                         if d.senses[i] != 0:
-                            glColor4f(*SIMULATOR_DEFAULTS._USER_SENSORS[i])
+                            glColor4f(*self.cloud.settings.graphics._user_sensors[i])
                             glCallList(self.listSenses[i])
                     if d == self.selected_device:
-                        glColor4f(*SIMULATOR_DEFAULTS.SELECTED_DEVICE)
+                        glColor4f(*self.cloud.settings.graphics.selected_device)
                         glCallList(self.listSelectIndicator)
                         
                 if self.cloud.show_radio:
-                    glColor4f(*SIMULATOR_DEFAULTS.RADIO_RANGE_RING)
+                    glColor4f(*self.cloud.settings.graphics.radio_range_ring)
                     glCallList(self.listRadio)
                 
                 if self.cloud.show_leds:
                     
                     leds = [0,0,0]
                     if not self.cloud.led_flat:
-                        if self.cloud.led_stacking_mode == pymorphous.CONSTANTS.LED_STACKING_MODE_DIRECT:
+                        if self.cloud.led_stacking_mode == pymorphous.simulator_constants.LED_STACKING_MODE_DIRECT:
                             acc = 0
                             for i in range(3):
                                 leds[i] = d.leds[i]+acc
                                 acc += d.leds[i]
-                        elif self.cloud.led_stacking_mode == pymorphous.CONSTANTS.LED_STACKING_MODE_OFFSET:
+                        elif self.cloud.led_stacking_mode == pymorphous.simulator_constants.LED_STACKING_MODE_OFFSET:
                             for i in range(3):
                                 leds[i] = d.leds[i]+i
                         else:
@@ -324,7 +306,7 @@ class GLWidget(QtOpenGL.QGLWidget):
                         if d.leds[i] != 0:
                             glPushMatrix()
                             glTranslatef(0,0,leds[i])
-                            glColor4f(*SIMULATOR_DEFAULTS._LEDS[i])
+                            glColor4f(*self.cloud.settings.graphics._leds[i])
                             glCallList(self.listLeds[i])
                             glPopMatrix()
             else:
@@ -335,12 +317,12 @@ class GLWidget(QtOpenGL.QGLWidget):
         glPopMatrix()
     
     def resizeGL(self, width, height):
-        side = min(width, height)
-        #glViewport((width - side) / 2, (height - side) / 2, side, side)
-
+        glViewport(0, 0, width, height)
+        glLoadIdentity();
+        
         glMatrixMode(GL_PROJECTION)
         
-        gluPerspective(45.0,float(self.cloud.window_width)/self.cloud.window_height,0.1,200.0)    #setup lens
+        gluPerspective(45.0,float(width)/height,0.1,200.0)    #setup lens
         glTranslatef(0, 0, -150.0)                #move back
         #glRotatef(60, 1, 60, 90)                       #orbit higher
     
@@ -358,8 +340,8 @@ class GLWidget(QtOpenGL.QGLWidget):
         while (angle > 360 * 16):
             angle -= 360 * 16
             
-def simulator(cloud):
+def simulator_graphics(cloud):
     app = QtGui.QApplication(sys.argv)
-    window = Window(cloud = cloud)
+    window = _SimulatorWindow(cloud = cloud)
     window.show()
     sys.exit(app.exec_())
