@@ -1,7 +1,7 @@
 """
 Provides the simulator graphics implementation
 public:
-simulator_graphics
+graphics
 """
 
 import time
@@ -372,7 +372,7 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
         while (angle > 360 * 16):
             angle -= 360 * 16
             
-def simulator_graphics(cloud):
+def graphics(cloud):
     app = QtGui.QApplication(sys.argv)
     window = _SimulatorWindow(cloud = cloud)
     window.show()

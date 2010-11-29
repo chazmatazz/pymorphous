@@ -16,8 +16,8 @@ except ImportError:
 if settings.target_runtime == 'simulator':
     if settings.runtime.use_graphics == pymorphous.constants.UNSPECIFIED:
         try:
-            from pymorphous.simulator_graphics import simulator_graphics
-            settings.runtime.use_graphics = simulator_graphics
+            from pymorphous.simulator_graphics import graphics
+            settings.runtime.use_graphics = graphics
         except ImportError:
             pass    
     import pymorphous.simulator_runtime as implementation
