@@ -1,6 +1,8 @@
 """ modify this file for your own use """
 import default_settings
 runtime = default_settings.runtime
+runtime.init_num_devices = 1600
+runtime.grid = True
 
 WEBOTS = False
 

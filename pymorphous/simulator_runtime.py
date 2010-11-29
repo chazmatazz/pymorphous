@@ -304,7 +304,7 @@ class _Cloud(object):
             devices = []
             if self.grid:
                 d = 3 if self.dim[2] else 2
-                side_len = math.floor(self.num_devices**(1.0/d))
+                side_len = math.floor(self.init_num_devices**(1.0/d))
             for i in range(self.init_num_devices):
                 if self.grid:
                     if self.dim[2]!=0:

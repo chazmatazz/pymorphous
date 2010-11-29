@@ -17,7 +17,7 @@ class TrackingDemo(Device):
 
     def _reset(self):
         self.tracking = False
-        self.init_pos = numpy.array([0,0,0])
+        self.init_coord = numpy.array([0,0,0])
         self.time = 0
         
     def step(self):
@@ -44,13 +44,13 @@ class TrackingDemo(Device):
             (tup 0 0 0 0))))))
         """
         self.blue = self.tracking
-        delta = self.pos - self.init_pos
+        delta = self.coord - self.init_coord
         slope = abs(delta[1])/delta[0]
         
         if not self.prev_sense and self.senses[self.sense_id]:
             # init
             self.tracking = True
-            self.init_pos = self.pos
+            self.init_coord = self.coord
             self.time = 0
         elif (self.tracking 
               and self.time <= self.timeout 

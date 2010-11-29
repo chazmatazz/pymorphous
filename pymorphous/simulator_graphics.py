@@ -24,20 +24,19 @@ import pymorphous.simulator_constants
 class _SimulatorWindow(QtGui.QWidget):
     def __init__(self, cloud, parent=None):
         QtGui.QWidget.__init__(self, parent)
-
+        self.cloud = cloud
         self.glWidget = _SimulatorGLWidget(cloud)
         
-        mainLayout = QtGui.QHBoxLayout()
+        mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(self.glWidget)
         self.setLayout(mainLayout)
         
         self.setWindowTitle(self.tr(cloud.window_title))
 
-# the color code of the ground is 0
-_color_id_counter = 1
+_color_id_counter = 0
 
 def _get_color_id(lst):
-    return lst[0] + lst[1]*255 + lst[2]*255*255
+    return lst[0] + lst[1]*128 + lst[2]*128*128
 
 class _SimulatorUniqueColor(object):
     def __init__(self):
@@ -47,27 +46,15 @@ class _SimulatorUniqueColor(object):
         
     @property
     def red(self):
-        return self.value % 255
+        return self.value % 128
     
     @property
     def green(self):
-        return (self.value/255) % 255
+        return (self.value/128) % 128
     
     @property
     def blue(self):
-        return self.value/(255*255) % 255
-    
-    @property
-    def redf(self):
-        return self.red / 255.0
-    
-    @property
-    def greenf(self):
-        return self.green / 255.0
-    
-    @property
-    def bluef(self):
-        return self.blue / 255.0
+        return self.value/(128*128) % 128
         
 class _SimulatorGLWidget(QtOpenGL.QGLWidget):
     
@@ -88,47 +75,48 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
         timer.timeout.connect(self.myupdate)
         timer.start(1000.0/self.cloud.desired_fps)
         self.last_time = time.time()
+        
+        self.debug_click = False
     
     def __del__(self):
         self.makeCurrent()
         glDeleteLists(self.listSimpleBody, 1)
         glDeleteLists(self.listSelect, 1)
         glDeleteLists(self.listRadio, 1)
-        glDeleteLists(self.listSelectIndicator, 1)
+        glDeleteLists(self.listSelectedDevice, 1)
         for i in range(3):
             glDeleteLists(self.listLeds[i], 1)
 
     def initializeGL(self):
         glEnable(GL_DEPTH_TEST)
-        glClearColor(*self.cloud.settings.graphics.background)    
         glutInit()
         
         self.listSimpleBody = glGenLists(1);
         if not self.listSimpleBody:
             raise SystemError("""Unable to generate display list using glGenLists""")
         glNewList(self.listSimpleBody, GL_COMPILE)
-        glutWireSphere(0.8, 2, 2)
+        glutWireSphere(*self.cloud.settings.graphics.simple_body_dim)
         glEndList()
         
         self.listSelect = glGenLists(1);
         if not self.listSelect:
             raise SystemError("""Unable to generate display list using glGenLists""")
         glNewList(self.listSelect, GL_COMPILE)
-        glutSolidSphere(0.8*4, 8, 8)
+        glutSolidSphere(*self.cloud.settings.graphics.select_dim)
         glEndList()
-
-        self.listSelectIndicator = glGenLists(1);
-        if not self.listSelectIndicator:
+        
+        self.listSelectedDevice = glGenLists(1);
+        if not self.listSelectedDevice:
             raise SystemError("""Unable to generate display list using glGenLists""")
-        glNewList(self.listSelectIndicator, GL_COMPILE)
-        glutSolidSphere(0.8*4, 8, 8)
+        glNewList(self.listSelectedDevice, GL_COMPILE)
+        glutSolidSphere(*self.cloud.settings.graphics.selected_device_dim)
         glEndList()
         
         self.listRadio = glGenLists(1);
         if not self.listRadio:
             raise SystemError("""Unable to generate display list using glGenLists""")
         glNewList(self.listRadio, GL_COMPILE)
-        glutSolidSphere(0.8*4, 8, 8)
+        glutSolidSphere(0.8*4, 8, 8) # TODO
         glEndList()
         
         self.listSenses = []
@@ -137,7 +125,7 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
             if not self.listSenses[i]:
                 raise SystemError("""Unable to generate display list using glGenLists""")
             glNewList(self.listSenses[i], GL_COMPILE)
-            glutSolidSphere(0.4, 8, 8)
+            glutSolidSphere(*self.cloud.settings.graphics._user_sensor_dims[i])
             glEndList()
             
         self.listLeds = []
@@ -146,13 +134,13 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
             if not self.listLeds[i]:
                 raise SystemError("""Unable to generate display list using glGenLists""")
             glNewList(self.listLeds[i], GL_COMPILE)
-            glutSolidSphere(0.4, 8, 8)
+            glutSolidSphere(*self.cloud.settings.graphics._led_dims[i])
             glEndList()
         
         self.color_dict = {}
         for d in self.cloud.devices:
             d.color_id = _SimulatorUniqueColor()
-            self.color_dict[d.color_id.value] = d
+            self.color_dict[str(d.color_id.value)] = d
     
     @property
     def xRotation(self):
@@ -192,16 +180,17 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
 
     def mousePressEvent(self, event):
         self.mypaint(False)
-        pixel = glReadPixels(event.pos().x(), event.pos().y(), 1, 1, GL_RGB, GL_BYTE)
-        r = (pixel[0][0].tolist())
+        pixel = glReadPixels(event.pos().x(), self.height()-event.pos().y(), 1, 1, GL_RGB, GL_BYTE)
+        r = str((_get_color_id(pixel[0][0].tolist())))
         try:
             d = self.color_dict[r]
             if d == self.selected_device:
                 self.selected_device = None
             else:
                 self.selected_device = d
-        except:
+        except KeyError:
             self.selected_device = None
+            
         self.lastPos = event.pos()
 
     def mouseMoveEvent(self, event):
@@ -230,6 +219,10 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
         if key == QtCore.Qt.Key_L:
             self.cloud.show_leds = not self.cloud.show_leds
             self.updateGL()
+        
+        if key == QtCore.Qt.Key_D:
+            self.debug_click = not self.debug_click
+            self.updateGL()
             
         dirs = {QtCore.Qt.Key_Left: [-1,0],
                 QtCore.Qt.Key_Right: [1,0],
@@ -255,15 +248,10 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
         return QtCore.QSize(self.cloud.window_width, self.cloud.window_height)
     
     def paintGL(self):
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
-        
         self.mypaint(True)
         
     def mypaint(self, real):
-        glPushMatrix()
-        glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
-        glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
-        glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
+        self.set3dProjection(real)
         for d in self.cloud.devices:
             x = d.x
             y = d.y
@@ -272,18 +260,18 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
             glTranslatef(x,y,z)
             if real:
                 if self.cloud.show_body:
-                    glColor4f(*self.cloud.settings.graphics.simple_body)
+                    glColor4f(*self.cloud.settings.graphics.simple_body_color)
                     glCallList(self.listSimpleBody)
                     for i in range(3):
                         if d.senses[i] != 0:
-                            glColor4f(*self.cloud.settings.graphics._user_sensors[i])
+                            glColor4f(*self.cloud.settings.graphics._user_sensor_colors[i])
                             glCallList(self.listSenses[i])
                     if d == self.selected_device:
-                        glColor4f(*self.cloud.settings.graphics.selected_device)
-                        glCallList(self.listSelectIndicator)
+                        glColor4f(*self.cloud.settings.graphics.selected_device_color)
+                        glCallList(self.listSelectedDevice)
                         
                 if self.cloud.show_radio:
-                    glColor4f(*self.cloud.settings.graphics.radio_range_ring)
+                    glColor4f(*self.cloud.settings.graphics.radio_range_ring_color)
                     glCallList(self.listRadio)
                 
                 if self.cloud.show_leds:
@@ -306,25 +294,41 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
                         if d.leds[i] != 0:
                             glPushMatrix()
                             glTranslatef(0,0,leds[i])
-                            glColor4f(*self.cloud.settings.graphics._leds[i])
+                            glColor4f(*self.cloud.settings.graphics._led_colors[i])
                             glCallList(self.listLeds[i])
                             glPopMatrix()
+                if self.debug_click:
+                    glColor3b(d.color_id.red, d.color_id.green, d.color_id.blue)
+                    glCallList(self.listSelect)
             else:
                 if self.cloud.show_body:
-                    glColor3f(d.color_id.redf, d.color_id.greenf, d.color_id.bluef)
+                    glColor3b(d.color_id.red, d.color_id.green, d.color_id.blue)
                     glCallList(self.listSelect)
             glPopMatrix()
-        glPopMatrix()
     
-    def resizeGL(self, width, height):
-        glViewport(0, 0, width, height)
+    def set3dProjection(self, real=True):
         glLoadIdentity();
-        
+        glViewport(0, 0, self.width(), self.height())
+        if real:
+            glClearColor(*self.cloud.settings.graphics.background_color)
+        else:
+            glClearColor(1,1,1,1)
+            glDisable(GL_LIGHTING)
+            glDisable(GL_TEXTURE_2D)
+            glDisable(GL_BLEND)
+            glShadeModel(GL_FLAT)
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
         glMatrixMode(GL_PROJECTION)
-        
-        gluPerspective(45.0,float(width)/height,0.1,200.0)    #setup lens
+        gluPerspective(45.0,float(self.width())/self.height(),0.1,200.0)    #setup lens
         glTranslatef(0, 0, -150.0)                #move back
         #glRotatef(60, 1, 60, 90)                       #orbit higher
+        glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
+        glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
+        glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
+        
+    def resizeGL(self, width, height):
+        self.set3dProjection()
     
     def myupdate(self):
         now = time.time()

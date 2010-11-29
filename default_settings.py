@@ -35,16 +35,26 @@ class _Graphics(dict):
     def __init__(self, *args, **kwargs):
         dict.__init__(self, *args, **kwargs)
         
-        self['background'] = (0, 0, 0, 0)
-        self['simple_body'] = (1, 0.25, 0, 0.8)
-        self['selected_device'] = (1,1,1,0.2)
-        self['radio_range_ring'] = (0.25, 0.25, 0.25, 0.8)
-        self['user_sensor_0'] = (1, 0.5, 0, 0.8)
-        self['user_sensor_1'] = (0.5, 0, 1, 0.8)
-        self['user_sensor_2'] = (1, 0, 0.5, 0.8)
-        self['red_led'] = (1, 0, 0, 0.8)
-        self['green_led'] = (0, 1, 0, 0.8)
-        self['blue_led'] = (0, 0, 1, 0.8)
+        self['background_color'] = (0, 0, 0, 0)
+        self['simple_body_color'] = (1, 0.25, 0, 0.8)
+        self['selected_device_color'] = (1,1,1,0.2)
+        self['radio_range_ring_color'] = (0.25, 0.25, 0.25, 0.8)
+        self['user_sensor_0_color'] = (1, 0.5, 0, 0.8)
+        self['user_sensor_1_color'] = (0.5, 0, 1, 0.8)
+        self['user_sensor_2_color'] = (1, 0, 0.5, 0.8)
+        self['red_led_color'] = (1, 0, 0, 0.8)
+        self['green_led_color'] = (0, 1, 0, 0.8)
+        self['blue_led_color'] = (0, 0, 1, 0.8)
+        
+        self['simple_body_dim'] = (0.8, 2, 2)
+        self['select_dim'] = (0.8*4, 8, 8)
+        self['selected_device_dim'] = (0.8*4, 8, 8)
+        self['user_sensor_0_dim'] = (0.8, 8, 8)
+        self['user_sensor_1_dim'] = (0.8, 8, 8)
+        self['user_sensor_2_dim'] = (0.8, 8, 8)
+        self['red_led_dim'] = (0.4, 8, 8)
+        self['green_led_dim'] = (0.4, 8, 8)
+        self['blue_led_dim'] = (0.4, 8, 8)
     
     def __getattr__(self, name):
         return self[name]
@@ -53,12 +63,20 @@ class _Graphics(dict):
         self[name] = value
     
     @property
-    def _user_sensors(self):
-        return [self.user_sensor_0, self.user_sensor_1, self.user_sensor_2]
+    def _user_sensor_colors(self):
+        return [self.user_sensor_0_color, self.user_sensor_1_color, self.user_sensor_2_color]
     
     @property
-    def _leds(self):
-        return [self.red_led, self.green_led, self.blue_led]
+    def _led_colors(self):
+        return [self.red_led_color, self.green_led_color, self.blue_led_color]
+    
+    @property
+    def _user_sensor_dims(self):
+        return [self.user_sensor_0_dim, self.user_sensor_1_dim, self.user_sensor_2_dim]
+    
+    @property
+    def _led_dims(self):
+        return [self.red_led_dim, self.green_led_dim, self.blue_led_dim]
 
 graphics = _Graphics()
 

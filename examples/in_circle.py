@@ -20,7 +20,7 @@ class InCircles(Device):
           (let ((dv (- (probe (coord) 1) o)))
             (< (probe (vdot dv dv) 0) (* r r))))
         """
-        dv = self.pos - origin
+        dv = self.coord - origin
         return numpy.dot(dv, dv) < radius * radius
         
 spawn_cloud(klass=InCircles)
