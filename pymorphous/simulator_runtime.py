@@ -293,7 +293,7 @@ class _Cloud(object):
         
         if self._3D:
             if len(self.dim)==3:
-                self.dim[2] = 100
+                self.dim[2] = self.z_dim
             
         if len(self.dim) == 1:
             self.dim = self.dim + SIMULATOR_DEFAULTS.RUNTIME.DIM[1:]

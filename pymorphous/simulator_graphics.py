@@ -18,6 +18,8 @@ except ImportError:
                             QtGui.QMessageBox.Ok | QtGui.QMessageBox.Default,
                             QtGui.QMessageBox.NoButton)
     sys.exit(1)
+    
+import Image
 
 import pymorphous.simulator_constants
 
@@ -75,8 +77,14 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
         timer.timeout.connect(self.myupdate)
         timer.start(1000.0/self.cloud.desired_fps)
         self.last_time = time.time()
+        self.start_time = time.time()
+        self.recording = self.cloud.auto_record
+        self.frameno = 0
         
-        self.debug_click = False
+        self.color_dict = {}
+        for d in self.cloud.devices:
+            d.color_id = _SimulatorUniqueColor()
+            self.color_dict[str(d.color_id.value)] = d
     
     def __del__(self):
         self.makeCurrent()
@@ -136,11 +144,6 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
             glNewList(self.listLeds[i], GL_COMPILE)
             glutSolidSphere(*self.cloud.settings.graphics._led_dims[i])
             glEndList()
-        
-        self.color_dict = {}
-        for d in self.cloud.devices:
-            d.color_id = _SimulatorUniqueColor()
-            self.color_dict[str(d.color_id.value)] = d
     
     @property
     def xRotation(self):
@@ -206,9 +209,36 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
 
         self.lastPos = event.pos()
     
+    def save_image(self, image=True):
+        if image:
+            basedir = self.cloud.settings.runtime.dir_image
+        else:
+            basedir = self.cloud.settings.runtime.tmp_dir_video
+        
+        width, height = self.width(), self.height()
+        glPixelStorei(GL_PACK_ALIGNMENT, 1)
+        data = glReadPixelsub(0, 0, width, height, GL_RGB)
+        assert data.shape == (width,height,3), """Got back array of shape %r, expected %r"""%(
+            data.shape,
+            (width,height,3),
+        )
+        image = Image.fromstring( "RGB", (width, height), data.tostring())
+        image = image.transpose(Image.FLIP_TOP_BOTTOM)
+        dir = os.path.join(basedir, "%s" % self.start_time)
+        if not os.path.isdir(dir):
+            os.makedirs(dir)
+        filename = os.path.join(dir, "%s.png" % self.frameno)
+        image.save(filename, "PNG")
+    
     def keyPressEvent(self, event):
         key = event.key()
         
+        if key == QtCore.Qt.Key_I:
+            self.save_image()
+        if key == QtCore.Qt.Key_R:
+            self.recording = True
+        if key == QtCore.Qt.Key_S:
+            self.recording = False
         sense_keys = [QtCore.Qt.Key_T, QtCore.Qt.Key_Y, QtCore.Qt.Key_U]
         for i in range(len(sense_keys)):
             if key == sense_keys[i]:
@@ -218,10 +248,6 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
                     
         if key == QtCore.Qt.Key_L:
             self.cloud.show_leds = not self.cloud.show_leds
-            self.updateGL()
-        
-        if key == QtCore.Qt.Key_D:
-            self.debug_click = not self.debug_click
             self.updateGL()
             
         dirs = {QtCore.Qt.Key_Left: [-1,0],
@@ -297,14 +323,16 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
                             glColor4f(*self.cloud.settings.graphics._led_colors[i])
                             glCallList(self.listLeds[i])
                             glPopMatrix()
-                if self.debug_click:
-                    glColor3b(d.color_id.red, d.color_id.green, d.color_id.blue)
-                    glCallList(self.listSelect)
+
             else:
                 if self.cloud.show_body:
                     glColor3b(d.color_id.red, d.color_id.green, d.color_id.blue)
                     glCallList(self.listSelect)
             glPopMatrix()
+        if real:
+            if self.recording:
+                self.save_image(image=False)
+            self.frameno += 1
     
     def set3dProjection(self, real=True):
         glLoadIdentity();

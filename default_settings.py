@@ -1,4 +1,7 @@
+import os
+
 import pymorphous.simulator_constants
+import pymorphous.constants
 
 class _Runtime(dict):
     def __init__(self, *args, **kwargs):
@@ -8,6 +11,7 @@ class _Runtime(dict):
         self['steps_per_frame'] = 1
         self['desired_fps'] = 50
         self['dim'] = [132,100,0]
+        self['z_dim'] = 40
         self['body_rad'] = None
         self['radio_range'] = 15
         self['window_width'] = 1000
@@ -22,6 +26,10 @@ class _Runtime(dict):
         self['show_radio'] = False
         self['grid'] = False
         self['use_graphics'] = pymorphous.constants.UNSPECIFIED
+        
+        self['auto_record'] = False
+        self['dir_image'] = os.path.join('output', 'image')
+        self['tmp_dir_video'] = os.path.join('output', 'video')
         
     def __getattr__(self, name):
         return self[name]

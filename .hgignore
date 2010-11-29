@@ -1,4 +1,7 @@
 syntax: glob
 
+*.profile
+*.png
+*.avi
 *~
 *.pyc
