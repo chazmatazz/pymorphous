@@ -1,13 +1,13 @@
 """ modify this file for your own use """
 import default_settings
 runtime = default_settings.runtime
-runtime.init_num_devices = 1600
+runtime.init_num_devices = 400
 runtime.grid = True
-runtime.auto_record = True
+runtime.auto_record = False
 
-WEBOTS = False
+WEBOTS_WALL = False
 
-if WEBOTS:
+if WEBOTS_WALL:
     target_runtime = 'webots_wall'
 else:
     graphics = default_settings.graphics

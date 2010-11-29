@@ -31,6 +31,9 @@ class _BaseDevice(controller.Robot):
         self._time = time.time()
         self._nbrs = {} # map neighbor to time
         self._root_frame = None
+        self._leds = self._Leds(self)
+        self._senses = self._Senses(self)
+
         controller.register_incoming_message(self._receive_message)
         
     
@@ -38,23 +41,41 @@ class _BaseDevice(controller.Robot):
     def id(self):
         return self._id
     
+    class _Leds(object):
+        def __init__(self, parent):
+            self.parent = parent
+
+        def __setitem__(self, key, value):
+            self.parent.getLed(str(key)).set(value)
+        def __getitem__(self, key):
+            self.parent.getLed(key)
+
     @property
     def leds(self):
-        return [self.getLed('0'), self.getLed('1'), self.getLed('2')]
+        return self._leds
     
     @leds.setter
     def leds(self, value):
-        self.getLed('0').set(value[0])
-        self.getLed('1').set(value[1])
-        self.getLed('2').set(value[2])
-        
+        for i in range(3):
+            self._leds[i] = value[i]
+    
+    class _Senses(object):
+        def __init__(self, parent):
+            self.parent = parent
+
+        def __setitem__(self, key, value):
+            self.parent.getSense(str(key)).set(value)
+        def __getitem__(self, key):
+            self.parent.getSense(key)
+
     @property
     def senses(self):
-        return [0,0,0]
+        return self._senses
     
     @senses.setter
     def senses(self, value):
-        pass
+        for i in range(3):
+            self._senses[i] = value[i]
 
     @property
     def radio_range(self):
