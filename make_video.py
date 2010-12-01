@@ -1,10 +1,6 @@
-import ast
 import sys
 import os
-from os.path import splitext
 import subprocess
-
-import pymorphous
 
 if len(sys.argv) < 2:
     try:

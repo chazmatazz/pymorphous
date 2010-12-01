@@ -11,4 +11,5 @@ if WEBOTS_WALL:
     target_runtime = 'webots_wall'
 else:
     graphics = default_settings.graphics
+    graphics.background_color = (1,1,1,1)
     target_runtime = default_settings.target_runtime
