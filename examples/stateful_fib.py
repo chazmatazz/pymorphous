@@ -1,4 +1,4 @@
-from pymorphous import *
+from pymorphous.core import *
 
 def fib(n):
     if(n <= 1):

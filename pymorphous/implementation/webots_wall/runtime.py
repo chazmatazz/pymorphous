@@ -10,7 +10,7 @@ import sys
 import inspect
 import webots_mock as controller
 import uuid
-from pymorphous.simulator_runtime import _Field, _NbrKeyError
+from pymorphous.implementaton.simulator.runtime import _Field, _NbrKeyError
 
 _USE_SAFE_NBR = False
 

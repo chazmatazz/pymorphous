@@ -1,7 +1,8 @@
 import os
 
-import pymorphous.simulator_constants
 import pymorphous.constants
+import pymorphous.implementation.simulator.constants
+
 
 class _Runtime(dict):
     def __init__(self, *args, **kwargs):
@@ -21,7 +22,7 @@ class _Runtime(dict):
         self['headless'] = False
         self['show_leds'] = True
         self['led_flat'] = False
-        self['led_stacking_mode'] = pymorphous.simulator_constants.LED_STACKING_MODE_DIRECT
+        self['led_stacking_mode'] = pymorphous.implementation.simulator.constants.LED_STACKING_MODE_DIRECT
         self['show_body'] = True
         self['show_radio'] = False
         self['grid'] = False

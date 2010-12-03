@@ -1,4 +1,4 @@
-from pymorphous import *
+from pymorphous.core import *
 
 class BlueNeighborSense1(Device):
     def step(self):

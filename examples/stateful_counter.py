@@ -1,4 +1,4 @@
-from pymorphous import *
+from pymorphous.core import *
 
 class BlueCounter(Device):
     def setup(self):

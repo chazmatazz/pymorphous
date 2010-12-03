@@ -1,4 +1,4 @@
-from pymorphous import *
+from pymorphous.core import *
 import random
 
 class MinPlusDemo(Device):

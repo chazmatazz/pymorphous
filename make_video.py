@@ -15,5 +15,6 @@ else:
         print "dir to make video not found: %s" % indir
         sys.exit(1)
 
+print indir
 os.chdir(indir)
 asm_proc = subprocess.call("ffmpeg -r 5 -i %d.png video.avi", shell=True)

@@ -21,7 +21,7 @@ except ImportError:
     
 import Image
 
-import pymorphous.simulator_constants
+import pymorphous.implementation.simulator.constants
 
 class _SimulatorWindow(QtGui.QWidget):
     def __init__(self, cloud, parent=None):
@@ -304,12 +304,12 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
                     
                     leds = [0,0,0]
                     if not self.cloud.led_flat:
-                        if self.cloud.led_stacking_mode == pymorphous.simulator_constants.LED_STACKING_MODE_DIRECT:
+                        if self.cloud.led_stacking_mode == pymorphous.implementation.simulator.constants.LED_STACKING_MODE_DIRECT:
                             acc = 0
                             for i in range(3):
                                 leds[i] = d.leds[i]+acc
                                 acc += d.leds[i]
-                        elif self.cloud.led_stacking_mode == pymorphous.simulator_constants.LED_STACKING_MODE_OFFSET:
+                        elif self.cloud.led_stacking_mode == pymorphous.implementation.simulator.constants.LED_STACKING_MODE_OFFSET:
                             for i in range(3):
                                 leds[i] = d.leds[i]+i
                         else:
@@ -372,7 +372,7 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
         while (angle > 360 * 16):
             angle -= 360 * 16
             
-def graphics(cloud):
+def simulator_graphics(cloud):
     app = QtGui.QApplication(sys.argv)
     window = _SimulatorWindow(cloud = cloud)
     window.show()

@@ -1,4 +1,4 @@
-from pymorphous import *
+from pymorphous.core import *
 
 def mux(test, then, else_):
     if test:

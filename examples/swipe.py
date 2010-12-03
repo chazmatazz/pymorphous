@@ -1,4 +1,4 @@
-from pymorphous import *
+from pymorphous.core import *
 import numpy
 
 class TrackingDemo(Device):

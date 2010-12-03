@@ -16,20 +16,20 @@ except ImportError:
 if settings.target_runtime == 'simulator':
     if settings.runtime.use_graphics == pymorphous.constants.UNSPECIFIED:
         try:
-            from pymorphous.simulator_graphics import graphics
-            settings.runtime.use_graphics = graphics
+            import pymorphous.implementation.simulator.graphics
+            settings.runtime.use_graphics = pymorphous.implementation.simulator.graphics.simulator_graphics
         except ImportError:
             pass    
-    import pymorphous.simulator_runtime as implementation
+    import pymorphous.implementation.simulator.runtime as runtime
 elif settings.target_runtime == 'webots_wall':
-    import pymorphous.webots_wall_runtime as implementation
+    import pymorphous.implementation.webots_wall.runtime as runtime
 else:
     raise Exception("no suitable runtime found")
 
-Field = implementation._Field
-NbrKeyError = implementation._NbrKeyError
+Field = runtime._Field
+NbrKeyError = runtime._NbrKeyError
 
-class BaseDevice(implementation._BaseDevice):
+class BaseDevice(runtime._BaseDevice):
     def __init__(self, *args, **kwargs):
         super(BaseDevice, self).__init__(*args, **kwargs)
     
@@ -106,6 +106,6 @@ class BaseDevice(implementation._BaseDevice):
         return self.max_hood(self.deself(field))
 
 def spawn_cloud(*args, **kwargs):
-    return implementation._spawn_cloud(settings, *args, **kwargs)
+    return runtime._spawn_cloud(settings, *args, **kwargs)
 
 from pymorphous.lib import *
