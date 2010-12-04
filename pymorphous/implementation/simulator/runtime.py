@@ -267,7 +267,7 @@ class _BaseDevice(object):
         try:
             self.step()
         except _NbrKeyError:
-            print "oops"
+            print "duplicate key found"
         self._old_dict = self._dict
         self._dict = {}
         if numpy.any(self.velocity):
