@@ -14,7 +14,7 @@ class Voronoi(Device):
         for i in range(3):
             self.dists[i] = self.gradients[i].value(self.senses[i], extra_key=i)
         self.closest = min(self.dists,key = lambda a: self.dists.get(a))
-        if self.dists[self.closest] < float('inf'):
+        if self.dists[self.closest] < 50:
             self.leds[self.closest] = 5
 
 spawn_cloud(klass=Voronoi)
