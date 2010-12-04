@@ -264,6 +264,7 @@ class _BaseDevice(object):
         if not self._root_frame:
             self._root_frame = sys._getframe(1)
         self._dt = dt
+        self._reset_leds()
         try:
             self.step()
         except _NbrKeyError:
@@ -273,6 +274,7 @@ class _BaseDevice(object):
         if numpy.any(self.velocity):
             self.coord_changed = True
             self.coord += self.velocity
+        
 
 class _Cloud(object):
     def __init__(self, settings, 

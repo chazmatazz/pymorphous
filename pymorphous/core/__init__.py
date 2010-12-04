@@ -104,6 +104,9 @@ class BaseDevice(runtime._BaseDevice):
     def max_hood_plus(self, field):
         """ return the max over the field without self """
         return self.max_hood(self.deself(field))
+    
+    def _reset_leds(self):
+        self.leds = [0,0,0]
 
 def spawn_cloud(*args, **kwargs):
     return runtime._spawn_cloud(settings, *args, **kwargs)
