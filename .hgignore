@@ -1,7 +1,13 @@
 syntax: glob
 
-*.profile
-*.png
 *.avi
+*.profile
 *~
 *.pyc
+
+syntax: regexp
+^output/
+^dist/
+^doc/_build/
+^pymorphous.egg-info/
+^MANIFEST
