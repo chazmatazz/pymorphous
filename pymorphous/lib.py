@@ -13,6 +13,7 @@ class Device(BaseDevice):
     
     def consensus(self, epsilon, val, extra_key=None):
         """ Laplacian 
+        
          (def consensus (epsilon init)
           (rep val init
            (+ val
@@ -46,4 +47,11 @@ class Device(BaseDevice):
         (d,v) = self._gradients[key]
         return d
            
-        
+    @property
+    def color(self):
+        """ convert id to rgb """
+        f = 10
+        r = self.id % f
+        g = (self.id % (f**2)) - r
+        b = (self.id % (f**3)) - (r + g)
+        return [r*1.0/f, g*1.0/(f**2), b*1.0/(f**3)]

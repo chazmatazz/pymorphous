@@ -309,11 +309,12 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
                 
                 if self.cloud.show_leds:
                     if self.cloud.led_blend:
-                        glPushMatrix()
-                        glTranslatef(0,0,0)
-                        glColor3f(*d.leds)
-                        glCallList(self.listBlendLed)
-                        glPopMatrix()
+                        if(d.leds != [0,0,0]):
+                            glPushMatrix()
+                            glTranslatef(0,0,0)
+                            glColor3f(*d.leds)
+                            glCallList(self.listBlendLed)
+                            glPopMatrix()
                     else:
                         leds = [0,0,0]
                         if not self.cloud.led_flat:
