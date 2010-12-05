@@ -1,3 +1,7 @@
+"""Run a pymorphous program
+
+"""
+
 import ast
 import sys
 import os
@@ -7,7 +11,7 @@ PROFILE = len(sys.argv) > 2
 
 def run():
     if len(sys.argv) < 2:
-        print "pymorphous: no input file specified!"
+        print "run_pymorphous: no input file specified!"
         sys.exit(1)
     
     infile = sys.argv[1]

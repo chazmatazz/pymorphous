@@ -1,0 +1,4 @@
+include LICENSE
+include GPLv3
+include AUTHORS
+graft doc/_build/html

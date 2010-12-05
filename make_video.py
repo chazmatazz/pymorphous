@@ -6,7 +6,7 @@ if len(sys.argv) < 2:
     try:
         import settings
     except ImportError:
-        import default_settings as settings
+        import pymorphous.default_settings as settings
     video_dirs = [float(x) for x in os.listdir(settings.runtime.tmp_dir_video)]
     indir = os.path.join(settings.runtime.tmp_dir_video, str(max(video_dirs)))
 else:

@@ -15,8 +15,8 @@ class _Runtime(dict):
         self['z_dim'] = 40
         self['body_rad'] = None
         self['radio_range'] = 15
-        self['window_width'] = 1000
-        self['window_height'] = 1000
+        self['window_width'] = 1024
+        self['window_height'] = 768
         self['window_title'] = None
         self['_3D'] = False
         self['headless'] = False

@@ -1,9 +1,10 @@
 """
 Defines the public interface for pymorphous:
-Field
-NbrKeyError
-BaseDevice
-spawn_cloud
+
+* Field
+* NbrKeyError
+* BaseDevice
+* spawn_cloud
 """
 
 import pymorphous.constants
@@ -11,7 +12,7 @@ import pymorphous.constants
 try:
     import settings
 except ImportError:
-    import default_settings as settings
+    import pymorphous.default_settings as settings
 
 if settings.target_runtime == 'simulator':
     if settings.runtime.use_graphics == pymorphous.constants.UNSPECIFIED:
