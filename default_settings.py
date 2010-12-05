@@ -23,6 +23,7 @@ class _Runtime(dict):
         self['show_leds'] = True
         self['led_flat'] = False
         self['led_stacking_mode'] = pymorphous.implementation.simulator.constants.LED_STACKING_MODE_DIRECT
+        self['led_blend'] = False
         self['show_body'] = True
         self['show_radio'] = False
         self['grid'] = False

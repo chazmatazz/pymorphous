@@ -127,6 +127,13 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
         glutSolidSphere(0.8*4, 8, 8) # TODO
         glEndList()
         
+        self.listBlendLed = glGenLists(1);
+        if not self.listBlendLed:
+            raise SystemError("""Unable to generate display list using glGenLists""")
+        glNewList(self.listBlendLed, GL_COMPILE)
+        glutSolidSphere(0.8, 8, 8) # TODO
+        glEndList()
+        
         self.listSenses = []
         for i in range(3):
             self.listSenses += [glGenLists(1)]
@@ -301,28 +308,34 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
                     glCallList(self.listRadio)
                 
                 if self.cloud.show_leds:
-                    
-                    leds = [0,0,0]
-                    if not self.cloud.led_flat:
-                        if self.cloud.led_stacking_mode == pymorphous.implementation.simulator.constants.LED_STACKING_MODE_DIRECT:
-                            acc = 0
-                            for i in range(3):
-                                leds[i] = d.leds[i]+acc
-                                acc += d.leds[i]
-                        elif self.cloud.led_stacking_mode == pymorphous.implementation.simulator.constants.LED_STACKING_MODE_OFFSET:
-                            for i in range(3):
-                                leds[i] = d.leds[i]+i
-                        else:
-                            for i in range(3):
-                                leds[i] = d.leds[i]
-                        
-                    for i in range(3):
-                        if d.leds[i] != 0:
-                            glPushMatrix()
-                            glTranslatef(0,0,leds[i])
-                            glColor4f(*self.cloud.settings.graphics._led_colors[i])
-                            glCallList(self.listLeds[i])
-                            glPopMatrix()
+                    if self.cloud.led_blend:
+                        glPushMatrix()
+                        glTranslatef(0,0,0)
+                        glColor3f(*d.leds)
+                        glCallList(self.listBlendLed)
+                        glPopMatrix()
+                    else:
+                        leds = [0,0,0]
+                        if not self.cloud.led_flat:
+                            if self.cloud.led_stacking_mode == pymorphous.implementation.simulator.constants.LED_STACKING_MODE_DIRECT:
+                                acc = 0
+                                for i in range(3):
+                                    leds[i] = d.leds[i]+acc
+                                    acc += d.leds[i]
+                            elif self.cloud.led_stacking_mode == pymorphous.implementation.simulator.constants.LED_STACKING_MODE_OFFSET:
+                                for i in range(3):
+                                    leds[i] = d.leds[i]+i
+                            else:
+                                for i in range(3):
+                                    leds[i] = d.leds[i]
+                            
+                        for i in range(3):
+                            if d.leds[i] != 0:
+                                glPushMatrix()
+                                glTranslatef(0,0,leds[i])
+                                glColor4f(*self.cloud.settings.graphics._led_colors[i])
+                                glCallList(self.listLeds[i])
+                                glPopMatrix()
 
             else:
                 if self.cloud.show_body:
