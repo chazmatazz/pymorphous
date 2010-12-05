@@ -6,8 +6,6 @@ def mux(test, then, else_):
     else:
         return else_
 
-_USE_SAFE_NBR = False
-
 class Device(BaseDevice):
     def __init__(self, *args, **kwargs):
         super(Device, self).__init__(*args, **kwargs)
