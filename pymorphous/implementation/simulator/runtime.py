@@ -207,25 +207,26 @@ class _BaseDevice(object):
         self.cloud.coord_changed = True
         self._coord = new_coord
     
-    def nbr(self, val, extra_key=None):
+    def getkey(self, extra_key=None):
         if _USE_SAFE_NBR:
             key = repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
         else:
             frame = None
             frames = []
-            i = 1
-            while (not frame or frame.f_code.co_filename != self._root_frame.f_code.co_filename 
+            i = 2
+            while not frame or (frame.f_code.co_filename != self._root_frame.f_code.co_filename 
                 and frame.f_lineno != self._root_frame.f_lineno):
                 frame = sys._getframe(i)
                 i += 1
                 frames += [frame]
             key = repr(["%s:%d" % (f.f_code.co_filename, f.f_lineno) for f in frames])
         if extra_key:
-            return self._nbr("%s%s" % (key, extra_key), val)
+            return "%s%s" % (key, extra_key)
         else:
-            return self._nbr(key, val)
+            return key
     
-    def _nbr(self, key, val):
+    def nbr(self, val, extra_key=None):
+        key = self.getkey(extra_key)
         if key in self._dict.keys():
             raise _NbrKeyError("key %s found twice" % key)
         self._dict[key] = val
@@ -267,8 +268,8 @@ class _BaseDevice(object):
         self._reset_leds()
         try:
             self.step()
-        except _NbrKeyError:
-            print "duplicate key found"
+        except _NbrKeyError, e:
+            print e
         self._old_dict = self._dict
         self._dict = {}
         if numpy.any(self.velocity):

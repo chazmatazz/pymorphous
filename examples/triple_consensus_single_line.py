@@ -1,4 +1,4 @@
-from pymorphousc.core import *
+from pymorphous.core import *
 import random
 
 class TripleConsensusSingleLine(Device):

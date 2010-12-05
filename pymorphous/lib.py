@@ -6,7 +6,13 @@ def mux(test, then, else_):
     else:
         return else_
 
+_USE_SAFE_NBR = False
+
 class Device(BaseDevice):
+    def __init__(self, *args, **kwargs):
+        super(Device, self).__init__(*args, **kwargs)
+        self._gradients = {}
+    
     def consensus(self, epsilon, val, extra_key=None):
         """ Laplacian 
          (def consensus (epsilon init)
@@ -17,7 +23,7 @@ class Device(BaseDevice):
         """
         return val + epsilon * self.sum_hood(self.nbr(val, extra_key) - val)
     
-    class Gradient:
+    def gradient(self, src, extra_key=None):
         """
         (def gradient (src)
           (1st (rep (tup d v) (tup (inf) 0)
@@ -27,17 +33,19 @@ class Device(BaseDevice):
                 (tup (min-hood+ (+ (nbr d) (nbr-range))) 0)
                 (let ((v0 (/ (radio-range) (* (dt) 12)))) (tup (+ d (* v0 (dt))) v0)))))))
         """
-        def __init__(self, device):
-            self.device = device
-            self.d = float('inf')
-            self.v = 0
-            
-        def value(self, src, extra_key=None):
-            new_d = self.device.nbr(self.d, extra_key) + self.device.nbr_range + self.v * (self.device.nbr_lag + self.device.dt)
-            then_tup = (self.device.min_hood_plus(self.device.nbr(self.d, extra_key) + self.device.nbr_range), 0)
-            v0 = self.device.radio_range / (self.device.dt * 12)
-            else_tup = (self.d + v0 * self.device.dt, v0)
-            else_ = mux(self.device.max_hood_plus(new_d <= self.d), then_tup, else_tup)
-            (self.d, self.v) = mux(src, (0,0), else_)
-            return self.d
+        key = self.getkey(extra_key)
+        try:
+            (d,v) = self._gradients[key]
+        except KeyError:
+            self._gradients[key] = (float('inf'), 0)
+            (d,v) = self._gradients[key]
+        new_d = self.nbr(d, extra_key) + self.nbr_range + v * (self.nbr_lag + self.dt)
+        then_tup = (self.min_hood_plus(self.nbr(d, extra_key) + self.nbr_range), 0)
+        v0 = self.radio_range / (self.dt * 12)
+        else_tup = (d + v0 * self.dt, v0)
+        else_ = mux(self.max_hood_plus(new_d <= d), then_tup, else_tup)
+        self._gradients[key] = mux(src, (0,0), else_)
+        (d,v) = self._gradients[key]
+        return d
+           
         
