@@ -43,6 +43,15 @@ class _Field(dict):
                     ret[k] = None
         return ret
     
+    def _uop(self, op):
+        ret = _Field()
+        for k in self.keys():
+            if self[k] != None:
+                ret[k] = op(self[k])
+            else:
+                ret[k] = None
+        return ret
+    
     def _rop(self, other, op):
         ret = _Field()
         if isinstance(other, _Field):
@@ -117,6 +126,15 @@ class _Field(dict):
     def __ge__(self, other):
         return self._op(other, operator.ge)
     
+    def __neg__(self):
+        return self._uop(operator.neg)
+    
+    def __pow__(self, other):
+        return self._op(other, operator.pow)
+
+    def dot(self, other):
+        return self._op(other, numpy.dot)
+        
     def not_none_values(self):
         ret = []
         for v in self.values():
@@ -243,6 +261,10 @@ class _BaseDevice(object):
         return self._nbr_range
     
     @property
+    def nbr_vec(self):
+        return self._nbr_vec
+    
+    @property
     def nbr_lag(self):
         ret = _Field()
         for nbr in self._nbrs + [self]:
@@ -275,6 +297,10 @@ class _BaseDevice(object):
         if numpy.any(self.velocity):
             self.coord_changed = True
             self.coord += self.velocity
+    
+    def int_hood(self, field):
+        """ return the integral of expr over the neighborhood """
+        return numpy.sum(field.not_none_values(), axis=0)
         
 
 class _Cloud(object):
@@ -376,9 +402,11 @@ class _Cloud(object):
                     self.devices[j]._nbrs += [self.devices[i]]
                 for d in self.devices:
                     d._nbr_range = _Field()
+                    d._nbr_vec = _Field()
                     for n in d._nbrs + [d]:
-                        delta = d.coord - n.coord
+                        delta = n.coord - d.coord
                         d._nbr_range[n] = numpy.dot(delta, delta)**0.5
+                        d._nbr_vec[n] = delta
             self.coord_changed = False
             for d in self.devices:
                 d.dostep(milliseconds)

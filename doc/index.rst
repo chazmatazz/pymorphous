@@ -6,9 +6,7 @@
 Welcome to PyMorphous's documentation!
 ======================================
 
-Contents:
-
-Documentation is located at http://code.google.com/p/pymorphous/
+Documentation is located at http://code.google.com/p/pymorphous/. I am working to migrate the documentation to Sphinx.
 
 .. toctree::
    :maxdepth: 2

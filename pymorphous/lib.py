@@ -1,4 +1,5 @@
 from pymorphous.core import *
+import numpy
 
 def mux(test, then, else_):
     if test:
@@ -46,7 +47,43 @@ class Device(BaseDevice):
         self._gradients[key] = mux(src, (0,0), else_)
         (d,v) = self._gradients[key]
         return d
-           
+        
+    @property
+    def disperse(self):
+        """
+        ;; disperse does not scale properly with neighborhood size!
+        
+        (def newdisperse ()
+          (int-hood 
+           (let* ((vec (nbr-vec)) (dist-sqr (vdot vec vec)))
+             (if (< dist-sqr 0.01)
+               (tup 0 0 0)
+               (* (neg (/ 0.05 dist-sqr)) vec)))))
+        
+        (def olddisperse ()
+          (fold-hood (fun (t p)
+                   (let* ((r (nbr-range)))
+                   (let* (;; (r (radio-range))
+                      (vec (nbr-vec))
+                      (dist-sqr (vdot vec vec))
+                      ;; 25000
+                      (s (if (< dist-sqr 0.01) 0 (/ 5 dist-sqr)))) 
+                     (+ t (* (neg s) vec)))))
+                 (tup 0 0 0) 0))
+        
+        (def disperse () (newdisperse))
+        """
+        # using newdisperse
+        vec = self.nbr_vec
+        dist_sqr = self.nbr_range**2
+        f = Field()
+        for (k,v) in vec.items():
+            if dist_sqr[k] == 0:
+                f[k] = numpy.array([0,0,0])
+            else:
+                f[k] = -v * 0.05/dist_sqr[k]
+        return self.int_hood(f)
+        
     @property
     def color(self):
         """ convert id to rgb """
