@@ -15,6 +15,7 @@ _DEBUG_PRINT_MS = False
 _USE_SAFE_NBR = False
 
 import pymorphous.constants
+import pymorphous.fastinspect
 
 class _NbrKeyError(Exception):
     def __init__(self, value):
@@ -225,26 +226,18 @@ class _BaseDevice(object):
         self.cloud.coord_changed = True
         self._coord = new_coord
     
-    def getkey(self, extra_key=None):
+    def get_key(self, extra_key=None):
         if _USE_SAFE_NBR:
             key = repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
         else:
-            frame = None
-            frames = []
-            i = 2
-            while not frame or (frame.f_code.co_filename != self._root_frame.f_code.co_filename 
-                and frame.f_lineno != self._root_frame.f_lineno):
-                frame = sys._getframe(i)
-                i += 1
-                frames += [frame]
-            key = repr(["%s:%d" % (f.f_code.co_filename, f.f_lineno) for f in frames])
+            key = repr(["%s:%d" % (frame[1], frame[2]) for frame in  pymorphous.fastinspect.stack(stop=self._root_frame)])
         if extra_key:
             return "%s%s" % (key, extra_key)
         else:
             return key
     
     def nbr(self, val, extra_key=None):
-        key = self.getkey(extra_key)
+        key = self.get_key(extra_key)
         if key in self._dict.keys():
             raise _NbrKeyError("key %s found twice" % key)
         self._dict[key] = val
@@ -301,7 +294,15 @@ class _BaseDevice(object):
     def int_hood(self, field):
         """ return the integral of expr over the neighborhood """
         return numpy.sum(field.not_none_values(), axis=0)
-        
+    
+    def fold_hood_star(self, fold, base, field):
+        acc = base
+        for (k,v) in field.items():
+            acc = fold(acc, v)
+        return acc
+    
+    def fold_hood(self, fold, base, value):
+        return self.fold_hood_star(fold, base, self.nbr(value))
 
 class _Cloud(object):
     def __init__(self, settings, 
