@@ -6,7 +6,7 @@ import pymorphous.default_settings
 runtime = pymorphous.default_settings.runtime
 runtime.init_num_devices = 100
 runtime.grid = False
-runtime.auto_record = False
+runtime.auto_record = True
 
 WEBOTS_WALL = False
 
