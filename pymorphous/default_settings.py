@@ -21,13 +21,14 @@ class _Runtime(dict):
         self['_3D'] = False
         self['headless'] = False
         self['show_leds'] = True
+        self['led_wave_wall'] = False
         self['led_flat'] = False
         self['led_stacking_mode'] = pymorphous.implementation.simulator.constants.LED_STACKING_MODE_DIRECT
         self['led_blend'] = False
         self['show_body'] = True
         self['show_radio'] = False
-        self['grid'] = False
-        self['use_graphics'] = pymorphous.constants.UNSPECIFIED
+        self['arrangement'] = None
+        self['graphics_name'] = 'simulator'
         
         self['auto_record'] = False
         self['dir_image'] = os.path.join('output', 'image')
@@ -46,6 +47,7 @@ class _Graphics(dict):
         dict.__init__(self, *args, **kwargs)
         
         self['background_color'] = (0, 0, 0, 0)
+        self['background'] = None
         self['simple_body_color'] = (1, 0.25, 0, 0.8)
         self['selected_device_color'] = (1,1,1,0.2)
         self['radio_range_ring_color'] = (0.25, 0.25, 0.25, 0.8)

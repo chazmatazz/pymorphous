@@ -1,11 +1,7 @@
-"""
-Provides the simulator graphics implementation
-public:
-graphics
-"""
-
 import time
 from PySide import QtCore, QtGui, QtOpenGL
+import sys
+import math
 
 try:
     from OpenGL.GL import *
@@ -23,111 +19,61 @@ import Image
 
 import pymorphous.implementation.simulator.constants
 
-class _SimulatorWindow(QtGui.QWidget):
-    def __init__(self, cloud, parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        self.cloud = cloud
-        self.glWidget = _SimulatorGLWidget(cloud)
-        
-        mainLayout = QtGui.QVBoxLayout()
-        mainLayout.addWidget(self.glWidget)
-        self.setLayout(mainLayout)
-        
-        self.setWindowTitle(self.tr(cloud.window_title))
+from pymorphous.implementation.simulator.graphics import core
 
-_color_id_counter = 0
-
-def _get_color_id(lst):
-    return lst[0] + lst[1]*128 + lst[2]*128*128
-
-class _SimulatorUniqueColor(object):
-    def __init__(self):
-        global _color_id_counter
-        self.value = _color_id_counter
-        _color_id_counter += 1
-        
-    @property
-    def red(self):
-        return self.value % 128
-    
-    @property
-    def green(self):
-        return (self.value/128) % 128
-    
-    @property
-    def blue(self):
-        return self.value/(128*128) % 128
-        
-class _SimulatorGLWidget(QtOpenGL.QGLWidget):
+class _SimulatorGLWidget(core._BaseSimulatorWidget):
     
     def __init__(self, cloud, parent=None):
-        QtOpenGL.QGLWidget.__init__(self, parent)
+        core._BaseSimulatorWidget.__init__(self, cloud, parent)
+        self._wave_cone_cache = {}
         
-        self.cloud = cloud
-        
-        self.xRot = 0
-        self.yRot = 0
-        self.zRot = 0
-
-        self.selected_device = None
-        
-        self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.myupdate)
-        timer.start(1000.0/self.cloud.desired_fps)
-        self.last_time = time.time()
-        self.start_time = time.time()
-        self.recording = self.cloud.auto_record
-        self.frameno = 0
-        
-        self.color_dict = {}
-        for d in self.cloud.devices:
-            d.color_id = _SimulatorUniqueColor()
-            self.color_dict[str(d.color_id.value)] = d
-    
     def __del__(self):
-        self.makeCurrent()
+        core._BaseSimulatorWidget.__del__(self)
+
         glDeleteLists(self.listSimpleBody, 1)
         glDeleteLists(self.listSelect, 1)
-        glDeleteLists(self.listRadio, 1)
         glDeleteLists(self.listSelectedDevice, 1)
+        glDeleteLists(self.listRadio, 1)
+        glDeleteLists(self.listBlendLed, 1)
+        for lst in self._wave_cone_cache:
+            glDeleteLists(lst, 1)
+        for i in range(3):
+            glDeleteLists(self.listSenses[i], 1)
         for i in range(3):
             glDeleteLists(self.listLeds[i], 1)
 
     def initializeGL(self):
-        glEnable(GL_DEPTH_TEST)
-        glutInit()
+        core._BaseSimulatorWidget.initializeGL(self)
         
-        self.listSimpleBody = glGenLists(1);
+        self.listSimpleBody = glGenLists(1)
         if not self.listSimpleBody:
             raise SystemError("""Unable to generate display list using glGenLists""")
         glNewList(self.listSimpleBody, GL_COMPILE)
         glutWireSphere(*self.cloud.settings.graphics.simple_body_dim)
         glEndList()
         
-        self.listSelect = glGenLists(1);
+        self.listSelect = glGenLists(1)
         if not self.listSelect:
             raise SystemError("""Unable to generate display list using glGenLists""")
         glNewList(self.listSelect, GL_COMPILE)
         glutSolidSphere(*self.cloud.settings.graphics.select_dim)
         glEndList()
         
-        self.listSelectedDevice = glGenLists(1);
+        self.listSelectedDevice = glGenLists(1)
         if not self.listSelectedDevice:
             raise SystemError("""Unable to generate display list using glGenLists""")
         glNewList(self.listSelectedDevice, GL_COMPILE)
         glutSolidSphere(*self.cloud.settings.graphics.selected_device_dim)
         glEndList()
         
-        self.listRadio = glGenLists(1);
+        self.listRadio = glGenLists(1)
         if not self.listRadio:
             raise SystemError("""Unable to generate display list using glGenLists""")
         glNewList(self.listRadio, GL_COMPILE)
         glutSolidSphere(0.8*4, 8, 8) # TODO
         glEndList()
         
-        self.listBlendLed = glGenLists(1);
+        self.listBlendLed = glGenLists(1)
         if not self.listBlendLed:
             raise SystemError("""Unable to generate display list using glGenLists""")
         glNewList(self.listBlendLed, GL_COMPILE)
@@ -152,54 +98,25 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
             glutSolidSphere(*self.cloud.settings.graphics._led_dims[i])
             glEndList()
     
-    @property
-    def xRotation(self):
-        return self.xRot
-
-    @property
-    def yRotation(self):
-        return self.yRot
-
-    @property
-    def zRotation(self):
-        return self.zRot
-    
-    @xRotation.setter
-    def xRotation(self, angle):
-        self.normalizeAngle(angle)
-
-        if angle != self.xRot:
-            self.xRot = angle
-            self.updateGL()
-
-    @yRotation.setter
-    def yRotation(self, angle):
-        self.normalizeAngle(angle)
-
-        if angle != self.yRot:
-            self.yRot = angle
-            self.updateGL()
-
-    @zRotation.setter
-    def zRotation(self, angle):
-        self.normalizeAngle(angle)
-
-        if angle != self.zRot:
-            self.zRot = angle
-            self.updateGL()
+    def get_wave_cone(self, radius):
+        try:
+            return self._wave_cone_cache[radius]
+        except KeyError:
+            self._wave_cone_cache[radius] = glGenLists(1)
+            if not self._wave_cone_cache[radius]:
+                raise SystemError("""Unable to generate display list using glGenLists""")
+            glNewList(self._wave_cone_cache[radius], GL_COMPILE)
+            gluCylinder(gluNewQuadric(), 1, 0, radius, 10, 10)
+            glEndList()
+            return self._wave_cone_cache[radius]
 
     def mousePressEvent(self, event):
-        self.mypaint(False)
-        pixel = glReadPixels(event.pos().x(), self.height()-event.pos().y(), 1, 1, GL_RGB, GL_BYTE)
-        r = str((_get_color_id(pixel[0][0].tolist())))
-        try:
-            d = self.color_dict[r]
+        d = self.select_device(event)
+        if d:
             if d == self.selected_device:
                 self.selected_device = None
             else:
                 self.selected_device = d
-        except KeyError:
-            self.selected_device = None
             
         self.lastPos = event.pos()
 
@@ -215,27 +132,6 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
             self.zRotation = self.zRot + 8 * dx
 
         self.lastPos = event.pos()
-    
-    def save_image(self, image=True):
-        if image:
-            basedir = self.cloud.settings.runtime.dir_image
-        else:
-            basedir = self.cloud.settings.runtime.tmp_dir_video
-        
-        width, height = self.width(), self.height()
-        glPixelStorei(GL_PACK_ALIGNMENT, 1)
-        data = glReadPixelsub(0, 0, width, height, GL_RGB)
-        assert data.shape == (width,height,3), """Got back array of shape %r, expected %r"""%(
-            data.shape,
-            (width,height,3),
-        )
-        image = Image.fromstring( "RGB", (width, height), data.tostring())
-        image = image.transpose(Image.FLIP_TOP_BOTTOM)
-        dir = os.path.join(basedir, "%s" % self.start_time)
-        if not os.path.isdir(dir):
-            os.makedirs(dir)
-        filename = os.path.join(dir, "%s.png" % self.frameno)
-        image.save(filename, "PNG")
     
     def keyPressEvent(self, event):
         key = event.key()
@@ -274,14 +170,9 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
             self.cloud.show_body = not self.cloud.show_body
             self.updateGL()
             
-    def minimumSizeHint(self):
-        return QtCore.QSize(50, 50)
-
-    def sizeHint(self):
-        return QtCore.QSize(self.cloud.window_width, self.cloud.window_height)
-    
-    def paintGL(self):
-        self.mypaint(True)
+        if key == QtCore.Qt.Key_W:
+            self.cloud.led_wave_wall = not self.cloud.led_wave_wall
+            self.updateGL()
         
     def mypaint(self, real):
         self.set3dProjection(real)
@@ -308,7 +199,14 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
                     glCallList(self.listRadio)
                 
                 if self.cloud.show_leds:
-                    if self.cloud.led_blend:
+                    if self.cloud.led_wave_wall:
+                        glPushMatrix()
+                        glRotatef(core._radian_to_deg(d.leds[1]), 0, 0, 1) #theta
+                        glRotatef(core._radian_to_deg(d.leds[2]), 0, 1, 0) #phi
+                        glColor3f(0.5,1,0.5)
+                        glCallList(self.get_wave_cone(d.leds[0])) #radius
+                        glPopMatrix()
+                    elif self.cloud.led_blend:
                         if(d.leds != [0,0,0]):
                             glPushMatrix()
                             glTranslatef(0,0,0)
@@ -337,7 +235,6 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
                                 glColor4f(*self.cloud.settings.graphics._led_colors[i])
                                 glCallList(self.listLeds[i])
                                 glPopMatrix()
-
             else:
                 if self.cloud.show_body:
                     glColor3b(d.color_id.red, d.color_id.green, d.color_id.blue)
@@ -347,21 +244,9 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
             if self.recording:
                 self.save_image(image=False)
             self.frameno += 1
-    
-    def set3dProjection(self, real=True):
-        glLoadIdentity();
-        glViewport(0, 0, self.width(), self.height())
-        if real:
-            glClearColor(*self.cloud.settings.graphics.background_color)
-        else:
-            glClearColor(1,1,1,1)
-            glDisable(GL_LIGHTING)
-            glDisable(GL_TEXTURE_2D)
-            glDisable(GL_BLEND)
-            glShadeModel(GL_FLAT)
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
-        glMatrixMode(GL_PROJECTION)
+    def set3dProjection(self, real=True):
+        core._BaseSimulatorWidget.set3dProjection(self, real)
         gluPerspective(45.0,float(self.width())/self.height(),0.1,200.0)    #setup lens
         glTranslatef(0, 0, -150.0)                #move back
         #glRotatef(60, 1, 60, 90)                       #orbit higher
@@ -369,25 +254,7 @@ class _SimulatorGLWidget(QtOpenGL.QGLWidget):
         glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
         glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
         
-    def resizeGL(self, width, height):
-        self.set3dProjection()
-    
-    def myupdate(self):
-        now = time.time()
-        delta = now - self.last_time
-        self.cloud.update(delta)
-        self.last_time = now
-        self.updateGL()
-    
-    def normalizeAngle(self, angle):
-        while (angle < 0):
-            angle += 360 * 16
-
-        while (angle > 360 * 16):
-            angle -= 360 * 16
-            
+   
 def simulator_graphics(cloud):
-    app = QtGui.QApplication(sys.argv)
-    window = _SimulatorWindow(cloud = cloud)
-    window.show()
-    sys.exit(app.exec_())
+    core._simulator_graphics(cloud, _SimulatorGLWidget)
+    

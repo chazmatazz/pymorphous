@@ -226,25 +226,25 @@ class _BaseDevice(object):
         self.cloud.coord_changed = True
         self._coord = new_coord
     
-    def get_key(self, extra_key=None):
+    def get_tag(self, extra_tag=None):
         if _USE_SAFE_NBR:
-            key = repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
+            tag = repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
         else:
-            key = repr(["%s:%d" % (frame[1], frame[2]) for frame in  pymorphous.fastinspect.stack(stop=self._root_frame)])
-        if extra_key:
-            return "%s%s" % (key, extra_key)
+            tag = repr(["%s:%d" % (frame[1], frame[2]) for frame in  pymorphous.fastinspect.stack(stop=self._root_frame)])
+        if extra_tag:
+            return "%s%s" % (tag, extra_tag)
         else:
-            return key
+            return tag
     
-    def nbr(self, val, extra_key=None):
-        key = self.get_key(extra_key)
-        if key in self._dict.keys():
-            raise _NbrKeyError("key %s found twice" % key)
-        self._dict[key] = val
+    def nbr(self, val, extra_tag=None):
+        tag = self.get_tag(extra_tag)
+        if tag in self._dict.keys():
+            raise _NbrKeyError("tag %s found twice" % tag)
+        self._dict[tag] = val
         ret = _Field()
         for nbr in self._nbrs + [self]:
             try:
-                ret[nbr] = nbr._old_dict[key]
+                ret[nbr] = nbr._old_dict[tag]
             except KeyError:
                 ret[nbr] = None
         return ret
@@ -332,11 +332,13 @@ class _Cloud(object):
         
         if not devices:
             devices = []
-            if self.grid:
+            if self.arrangement == 'grid':
                 d = 3 if self.dim[2] else 2
                 side_len = math.floor(self.init_num_devices**(1.0/d))
+            elif self.arrangement == 'tile': # only 2D
+                side_len = math.floor(self.init_num_devices**(1.0/2))
             for i in range(self.init_num_devices):
-                if self.grid:
+                if self.arrangement == 'grid':
                     if self.dim[2]!=0:
                         coord = numpy.array([self.width*math.floor(i/(side_len*side_len)),
                                            self.height*((i/side_len) % side_len),
@@ -346,6 +348,12 @@ class _Cloud(object):
                         coord = numpy.array([self.width*math.floor(i/side_len), 
                                            self.height*(i % side_len), 0])/side_len
                         coord -= numpy.array([self.width/2, self.height/2, 0])
+                elif self.arrangement == 'tile':
+                    coord = numpy.array([self.width*math.floor(i/side_len), 
+                                           self.height*(i % side_len), 0])/side_len
+                    if i%2:
+                        coord += numpy.array([side_len/2, 0, 0])
+                    coord -= numpy.array([self.width/2, self.height/2, 0])
                 else:
                     coord = numpy.array([(random.random()-0.5)*self.width, 
                                        (random.random()-0.5)*self.height, 
@@ -367,6 +375,9 @@ class _Cloud(object):
         self.coord_changed = True
         self.mss = []
 
+    @property
+    def wall_hex_radius(self):
+        return math.floor(self.init_num_devices**(1.0/2))/2
     @property
     def width(self):
         return self.dim[0]
