@@ -1,9 +1,11 @@
 syntax: glob
 
+settings.py
 *.avi
 *.profile
 *~
 *.pyc
+.DS_Store
 
 syntax: regexp
 ^output/

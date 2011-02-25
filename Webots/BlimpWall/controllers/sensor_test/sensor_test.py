@@ -5,7 +5,7 @@
 #
 
 import sys
-sys.path.append('/home/kizzle/Dropbox/pymorphous')
+sys.path.append('/Users/charlesdietrich/Dropbox/correll/pymorphous/pymorphous')
 from pymorphous.core import *
 
 class SensorTest(Device): 
