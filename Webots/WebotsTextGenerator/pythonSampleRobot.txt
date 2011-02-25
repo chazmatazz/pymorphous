@@ -1,0 +1,191 @@
+Robot {
+  translation 0 -0 -1.09
+  children [
+    LED {
+      translation -0.93 2.85 5.14
+      children [
+        DEF LED_GROUP Group {
+          children [
+            Shape {
+              appearance Appearance {
+                material Material {
+                  diffuseColor 0.74902 0.74902 0.74902
+                }
+              }
+              geometry Sphere {
+                radius 0.01
+              }
+            }
+            PointLight {
+              color 0 0 0
+              intensity 0.2
+              location 0 0.03 0
+            }
+          ]
+        }
+      ]
+      name "led0"
+      color [
+      ]
+      gradual TRUE
+    }
+    LED {
+      translation -0.93 2.78 5.08
+      children [
+        DEF LED_GROUP Group {
+          children [
+            Shape {
+              appearance Appearance {
+                material Material {
+                  diffuseColor 0.74902 0.74902 0.74902
+                }
+              }
+              geometry Sphere {
+                radius 0.01
+              }
+            }
+            PointLight {
+              color 0 0 0
+              intensity 0.2
+              location 0 0.03 0
+            }
+          ]
+        }
+      ]
+      name "led1"
+      color [
+      ]
+      gradual TRUE
+    }
+    LED {
+      translation -0.93 2.78 5.19
+      children [
+        DEF LED_GROUP Group {
+          children [
+            Shape {
+              appearance Appearance {
+                material Material {
+                  diffuseColor 0.74902 0.74902 0.74902
+                }
+              }
+              geometry Sphere {
+                radius 0.01
+              }
+            }
+            PointLight {
+              color 0 0 0
+              intensity 0.3
+              location 0 0.03 0
+            }
+          ]
+        }
+      ]
+      name "led2"
+      color [
+      ]
+      gradual TRUE
+    }
+    DEF EMITTER Emitter {
+      translation -0.93 3 5.14
+      rotation 0 1 0 3.1415
+      name "emitter1"
+      type "infra-red"
+      range 0.1
+      channel 1
+    }
+    DEF RECEIVER Receiver {
+      translation -0.93 3 5.14
+      rotation 0 1 0 3.1415
+      name "receiver1"
+      type "infra-red"
+      channel 4
+    }
+    DEF EMITTER Emitter {
+      translation -0.93 2.91 4.84
+      rotation 0 1 0 3.1415
+      name "emitter2"
+      type "infra-red"
+      range 0.1
+      channel 2
+    }
+    DEF RECEIVER Receiver {
+      translation -0.93 2.91 4.84
+      rotation 0 1 0 3.1415
+      name "receiver2"
+      type "infra-red"
+      channel 5
+    }
+    DEF EMITTER Emitter {
+      translation -0.93 2.73 4.85
+      rotation 0 1 0 3.1415
+      name "emitter3"
+      type "infra-red"
+      range 0.1
+      channel 3
+    }
+    DEF RECEIVER Receiver {
+      translation -0.93 2.73 4.85
+      rotation 0 1 0 3.1415
+      name "receiver3"
+      type "infra-red"
+      channel 6
+    }
+    DEF EMITTER Emitter {
+      translation -0.93 2.65 5.14
+      rotation 0 1 0 3.1415
+      name "emitter4"
+      type "infra-red"
+      range 0.1
+      channel 4
+    }
+    DEF RECEIVER Receiver {
+      translation -0.93 2.65 5.14
+      rotation 0 1 0 3.1415
+      name "receiver4"
+      type "infra-red"
+      channel 1
+    }
+    DEF EMITTER Emitter {
+      translation -0.93 2.73 5.4
+      rotation 0 1 0 3.1415
+      name "emitter5"
+      type "infra-red"
+      range 0.1
+      channel 5
+    }
+    DEF RECEIVER Receiver {
+      translation -0.93 2.73 5.4
+      rotation 0 1 0 3.1415
+      name "receiver5"
+      type "infra-red"
+      channel 2
+    }
+    DEF EMITTER Emitter {
+      translation -0.93 2.91 5.4
+      rotation 0 1 0 3.1415
+      name "emitter6"
+      type "infra-red"
+      range 0.1
+      channel 6
+    }
+    DEF RECEIVER Receiver {
+      translation -0.93 2.91 5.4
+      rotation 0 1 0 3.1415
+      name "receiver6"
+      type "infra-red"
+      channel 3
+    }
+    DistanceSensor {
+      translation -0.93 2.81 5.14
+      name "sensor1"
+      lookupTable [
+        0 1024 0
+        2.8 700 0
+        3.1 0 0
+      ]
+      numberOfRays 7
+      aperture 0.43
+    }
+  ]
+  controller "sensor_test2"
+}
