@@ -15,12 +15,13 @@ except ImportError:
     import pymorphous.default_settings as settings
 
 if settings.target_runtime == 'simulator':
-    if settings.runtime.use_graphics == pymorphous.constants.UNSPECIFIED:
-        try:
-            import pymorphous.implementation.simulator.graphics
-            settings.runtime.use_graphics = pymorphous.implementation.simulator.graphics.simulator_graphics
-        except ImportError:
-            pass    
+    if settings.runtime.graphics_name == 'simulator':
+        import pymorphous.implementation.simulator.graphics.simulator
+        settings.runtime.use_graphics = pymorphous.implementation.simulator.graphics.simulator.simulator_graphics
+    elif settings.runtime.graphics_name == "wall":
+         import pymorphous.implementation.simulator.graphics.wall
+         settings.runtime.use_graphics = pymorphous.implementation.simulator.graphics.wall.wall_graphics
+    
     import pymorphous.implementation.simulator.runtime as runtime
 elif settings.target_runtime == 'webots_wall':
     import pymorphous.implementation.webots_wall.runtime as runtime
@@ -108,6 +109,9 @@ class BaseDevice(runtime._BaseDevice):
     
     def _reset_leds(self):
         self.leds = [0,0,0]
+        
+    def _reset_senses(self):
+        self.senses = [0,0,0]
 
 def spawn_cloud(*args, **kwargs):
     return runtime._spawn_cloud(settings, *args, **kwargs)

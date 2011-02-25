@@ -34,7 +34,7 @@ class Device(BaseDevice):
         self._gradients = {}
         self._flock = {}
     
-    def consensus(self, epsilon, val, extra_key=None):
+    def consensus(self, epsilon, val, extra_tag=None):
         """ Laplacian 
         
          (def consensus (epsilon init)
@@ -43,9 +43,9 @@ class Device(BaseDevice):
             (* epsilon
              (sum-hood (- (nbr val) val))))))
         """
-        return val + epsilon * self.sum_hood(self.nbr(val, extra_key) - val)
+        return val + epsilon * self.sum_hood(self.nbr(val, extra_tag) - val)
     
-    def gradient(self, src, extra_key=None):
+    def gradient(self, src, extra_tag=None):
         """
         (def gradient (src)
           (1st (rep (tup d v) (tup (inf) 0)
@@ -55,19 +55,19 @@ class Device(BaseDevice):
                 (tup (min-hood+ (+ (nbr d) (nbr-range))) 0)
                 (let ((v0 (/ (radio-range) (* (dt) 12)))) (tup (+ d (* v0 (dt))) v0)))))))
         """
-        key = self.get_key(extra_key)
+        tag = self.get_tag(extra_tag)
         try:
-            (d,v) = self._gradients[key]
+            (d,v) = self._gradients[tag]
         except KeyError:
-            self._gradients[key] = (float('inf'), 0)
-            (d,v) = self._gradients[key]
-        new_d = self.nbr(d, extra_key) + self.nbr_range + v * (self.nbr_lag + self.dt)
-        then_tup = (self.min_hood_plus(self.nbr(d, extra_key) + self.nbr_range), 0)
+            self._gradients[tag] = (float('inf'), 0)
+            (d,v) = self._gradients[tag]
+        new_d = self.nbr(d, extra_tag) + self.nbr_range + v * (self.nbr_lag + self.dt)
+        then_tup = (self.min_hood_plus(self.nbr(d, extra_tag) + self.nbr_range), 0)
         v0 = self.radio_range / (self.dt * 12)
         else_tup = (d + v0 * self.dt, v0)
         else_ = mux(self.max_hood_plus(new_d <= d), then_tup, else_tup)
-        self._gradients[key] = mux(src, (0,0), else_)
-        (d,v) = self._gradients[key]
+        self._gradients[tag] = mux(src, (0,0), else_)
+        (d,v) = self._gradients[tag]
         return d
         
     @property
@@ -133,7 +133,7 @@ class Device(BaseDevice):
         else:
             return zero_vec
     
-    def flock(self, dir, extra_key=None):
+    def flock(self, dir, extra_tag=None):
         """
         (def flock (dir)
           (rep v 
@@ -149,12 +149,12 @@ class Device(BaseDevice):
              (normalize 
               (+ dir (mux (> (vdot d d) 0) d v))))))
         """
-        key = self.get_key(extra_key)
+        tag = self.get_tag(extra_tag)
         try:
-            v = self._flock[key]
+            v = self._flock[tag]
         except KeyError:
-            self._flock[key] = zero_vec
-            v = self._flock[key]
+            self._flock[tag] = zero_vec
+            v = self._flock[tag]
         
         nbr_range = self.nbr_range
         nbr_vec = self.nbr_vec
@@ -173,8 +173,8 @@ class Device(BaseDevice):
                     f[k] = normalize(e)
             
         d = normalize(self.int_hood(f))
-        self._flock[key] = normalize(dir + mux(numpy.dot(d,d) > 0, d, v))
-        return self._flock[key]
+        self._flock[tag] = normalize(dir + mux(numpy.dot(d,d) > 0, d, v))
+        return self._flock[tag]
     
     
     

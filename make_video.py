@@ -17,4 +17,4 @@ else:
 
 print indir
 os.chdir(indir)
-asm_proc = subprocess.call("ffmpeg -r 5 -i %d.png video.avi", shell=True)
+asm_proc = subprocess.call("ffmpeg -r 20 -i %d.png video.avi", shell=True)
