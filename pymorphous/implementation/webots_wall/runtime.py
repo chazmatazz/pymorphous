@@ -1,6 +1,4 @@
 """ 
-!!!!! This is pseudocode for the webots runtime. Untested! !!!!! 
-
 Defines the wall device
 exposes an implementation
 """
@@ -8,21 +6,43 @@ exposes an implementation
 import time
 import sys
 import inspect
-import webots_mock as controller
+import controller
 import uuid
-from pymorphous.implementaton.simulator.runtime import _Field, _NbrKeyError
+import pickle
+
+from pymorphous.implementation.simulator.runtime import _Field, _NbrKeyError
 
 _USE_SAFE_NBR = False
-
+TIMEOUT = 32000000000
 class _Message(object):
     def __init__(self, id, time, data):
         self.id = id
-        self._time = time
-        self._data = data
+        self.time = time
+        self.data = data
         
-class _BaseDevice(controller.Robot):
-    def __init__(self, settings, id, *args, **kwargs):
-        super(_BaseDevice, self).__init__(self, *args, **kwargs)
+class GenericRobot(controller.Robot):
+  timeStep = 320 #originally 32
+
+  def initialize(self, klass, settings, *args):
+    
+    self.o = klass(settings, str(uuid.uuid4()), self)
+    if hasattr(self.o, 'setup'):
+        if args:
+            self.o.setup(*args)
+        else:
+            self.o.setup()
+  def run(self):  
+    while True:
+        #a=self.getLED('led0')
+        #a.set(2)
+        self.o.dostep()
+        if self.step(self.timeStep) == -1: break
+        
+
+class _BaseDevice(object):
+    def __init__(self, settings, id, webot_robot, *args, **kwargs):
+	
+	self._webot_robot = webot_robot
         self.settings = settings
         self._id = id
         self._fields = {} # dict of fields
@@ -33,9 +53,9 @@ class _BaseDevice(controller.Robot):
         self._root_frame = None
         self._leds = self._Leds(self)
         self._senses = self._Senses(self)
-
-        controller.register_incoming_message(self._receive_message)
-        
+	self._num_transmitters = 6
+	for i in range(self._num_transmitters):
+		self._webot_robot.getReceiver("receiver" + str(i + 1)).enable(self._webot_robot.timeStep)  
     
     @property
     def id(self):
@@ -44,11 +64,22 @@ class _BaseDevice(controller.Robot):
     class _Leds(object):
         def __init__(self, parent):
             self.parent = parent
+	
+	def convertRGB(self, rgb):
+	    return rgb[2] + rgb[1] * 256 + rgb[0] * 256 * 256  
 
         def __setitem__(self, key, value):
-            self.parent.getLed(str(key)).set(value)
+	    if value :
+		if value < 0: value = 0
+		elif value > 255: value = 255
+		temp = [0, 0, 0]
+	    	temp[key] = int(value)
+		tempColor = self.convertRGB(temp)
+		self.parent._webot_robot.getLED("led" + str(key)).set(tempColor)
+		#self.parent._webot_robot.getLED("led" + str(key)).set(key+1)
+	    else: self.parent._webot_robot.getLED("led" + str(key)).set(0)
         def __getitem__(self, key):
-            self.parent.getLed(key)
+            return self.parent._webot_robot.getLED("led" + str(key))
 
     @property
     def leds(self):
@@ -62,11 +93,12 @@ class _BaseDevice(controller.Robot):
     class _Senses(object):
         def __init__(self, parent):
             self.parent = parent
+	    self._num_sensors = 1
+	    for i in range(self._num_sensors):
+	    	self.parent._webot_robot.getDistanceSensor('sensor' + str(i + 1)).enable(self.parent._webot_robot.timeStep)
 
-        def __setitem__(self, key, value):
-            self.parent.getSense(str(key)).set(value)
         def __getitem__(self, key):
-            self.parent.getSense(key)
+            return self.parent._webot_robot.getDistanceSensor('sensor' + str(key + 1)).getValue()
 
     @property
     def senses(self):
@@ -76,6 +108,7 @@ class _BaseDevice(controller.Robot):
     def senses(self, value):
         for i in range(3):
             self._senses[i] = value[i]
+   
 
     @property
     def radio_range(self):
@@ -142,7 +175,10 @@ class _BaseDevice(controller.Robot):
         if hasattr(self._data, b):
             raise _NbrKeyError("Runtime exception in nbr")
         self._data[b] = value
-        return getattr(self._fields, b, _Field())
+	try:        
+		return self._fields[b]
+	except:
+		return _Field()
     
     @property
     def nbr_range(self):
@@ -167,54 +203,59 @@ class _BaseDevice(controller.Robot):
         self._old_dict = self._dict
         self._dict = {}
 
-    
-    def _receive_message(self, message):
-        #This is within a signal handler, so no interrupts 
-        self._nbrs[message.id] = message.time
-        for (b, v) in message.data.items():
-            if not hasattr(self._new_fields, b):
-                self._new_fields[b] = Field()
-            self._new_fields[b][message.id] = value
 
     
     
     def dostep(self):
-        if not self._root_frame:
-            self._root_frame = sys._getframe(1)
+ 	if not self._root_frame:
+            self._root_frame = sys._getframe(1)	
+	for i in range(self._num_transmitters):
+		r = self._webot_robot.getReceiver("receiver" + str(i + 1))
+		while r.getQueueLength() > 0:
+			buffer = r.getData()
+			message = pickle.loads(buffer)
+			self._nbrs[message.id] = message.time
+			for (b, v) in message.data.items():
+			    try:
+			    	self._new_fields[b][message.id] = v
+			    except:
+				self._new_fields[b] = _Field()
+				self._new_fields[b][message.id] = v
+			r.nextPacket()
+     
         self.step()
         self._time = time.time()
-        for n in self._nbrs:
-            controller.send_message(Message(self.id, self._time, self._data))
-        self._data = {}
-        # time out old nbrs and field values
-        for (n, t) in self._nbrs.items():
-            if t + TIMEOUT < self._time:
-                del self._nbrs[n]
-        for (b, f) in self._fields.items():
-            for (id, v) in f.items():
-                if not hasattr(self._nbrs, id):
-                    del f[id]
-        for (b,f) in self._fields.items():
-            if len(f) == 0:
-                del self._fields[b]
+        
+	for i in range(self._num_transmitters):
+	    msg = pickle.dumps(_Message(self.id, self._time, self._data))
+	    self._webot_robot.getEmitter("emitter" + str(i + 1)).send(msg)
+        
+	self._data = {}       
+	# time out old nbrs and field values
+	for (n, t) in self._nbrs.items():
+	    if t + TIMEOUT < self._time:
+		del self._nbrs[n]
+	for (b, f) in self._fields.items():
+	    for (id, v) in f.items():
+		try:
+		   self._nbrs[id]
+		except:		
+		   del f[id]
+	for (b, f) in self._fields.items():
+	    if len(f) == 0:
+		del self._fields[b]
 
-        # bring in the new field values
-        controller.disable_interrupts()
-        for (b,f) in self._new_fields.items():
-            if not hasattr(self._fields, b):
-                self._fields[b] = f
-            else:
-                for (id, v) in f.items():
-                    self._fields[id] = v
-        controller.enable_interrupts()
+	# bring in the new field values
+	for (b, f) in self._new_fields.items():
+	    try:
+		for (id, v) in f.items():
+	            self._fields[b][id] = v
+	    except:
+		 self._fields[b] = f
+	        
 
 def _spawn_cloud(settings, klass=None, args=None, **kwargs):
-    """ not sure how to implement """
-    o = klass(settings, uuid.uuid4())
-    if hasattr(o, 'setup'):
-        if args:
-            o.setup(*args)
-        else:
-            o.setup()
-    while True:
-        o.dostep()
+    m = GenericRobot()
+    m.initialize(klass, settings)
+    m.run()
+
