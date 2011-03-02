@@ -16,3 +16,18 @@ if WEBOTS_WALL:
 else:
     graphics = pymorphous.default_settings.graphics
     target_runtime = pymorphous.default_settings.target_runtime
+
+"""
+These settings will enable the wall
+
+runtime = pymorphous.default_settings.runtime
+runtime.init_num_devices = 10**2
+runtime.arrangement = 'hex_tile'
+runtime.graphics_name = 'wall'
+
+
+graphics = pymorphous.default_settings.graphics
+graphics.background_color = (1,1,1,1)
+target_runtime = pymorphous.default_settings.target_runtime
+
+"""
