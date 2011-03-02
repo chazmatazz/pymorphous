@@ -25,10 +25,15 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
     
     def __init__(self, cloud, parent=None):
         core._BaseSimulatorWidget.__init__(self, cloud, parent)
+        
+        self.xRot = 0
+        self.yRot = 0
+        self.zRot = 0
+        
         self._wave_cone_cache = {}
         
     def __del__(self):
-        core._BaseSimulatorWidget.__del__(self)
+        self.makeCurrent()
 
         glDeleteLists(self.listSimpleBody, 1)
         glDeleteLists(self.listSelect, 1)
@@ -43,7 +48,7 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
             glDeleteLists(self.listLeds[i], 1)
 
     def initializeGL(self):
-        core._BaseSimulatorWidget.initializeGL(self)
+        glutInit()
         
         self.listSimpleBody = glGenLists(1)
         if not self.listSimpleBody:
@@ -97,6 +102,14 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
             glNewList(self.listLeds[i], GL_COMPILE)
             glutSolidSphere(*self.cloud.settings.graphics._led_dims[i])
             glEndList()
+            
+        glEnable(GL_DEPTH_TEST)
+        glDisable(GL_LIGHTING)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_BLEND)
+        glShadeModel(GL_FLAT)
+        self.setMode(True)
+        self.set3dProjection()
     
     def get_wave_cone(self, radius):
         try:
@@ -175,7 +188,11 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
             self.updateGL()
         
     def mypaint(self, real):
-        self.set3dProjection(real)
+        self.setMode(real)
+	    self.set3dProjection()
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
+
         for d in self.cloud.devices:
             x = d.x
             y = d.y
@@ -244,17 +261,29 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
             if self.recording:
                 self.save_image(image=False)
             self.frameno += 1
-
-    def set3dProjection(self, real=True):
-        core._BaseSimulatorWidget.set3dProjection(self, real)
+    
+    def set3dProjection(self):
+	glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        
         gluPerspective(45.0,float(self.width())/self.height(),0.1,200.0)    #setup lens
         glTranslatef(0, 0, -150.0)                #move back
         #glRotatef(60, 1, 60, 90)                       #orbit higher
         glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
         glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
         glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
-        
-   
+
+
+    def setMode(self, real):
+        if real:
+            color = self.cloud.settings.graphics.background_color
+        else:
+            color = (1,1,1,1)
+        glClearColor(*color)
+  
 def simulator_graphics(cloud):
-    core._simulator_graphics(cloud, _SimulatorGLWidget)
+    app = QtGui.QApplication(sys.argv)
+    window = core._SimulatorWindow(cloud = cloud, widget=_SimulatorGLWidget)
+    window.show()
+    sys.exit(app.exec_())
     

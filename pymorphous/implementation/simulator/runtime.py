@@ -331,42 +331,53 @@ class _Cloud(object):
             self.dim = self.dim + SIMULATOR_DEFAULTS.RUNTIME.DIM[2:] if self._3D else [100]
         
         if not devices:
-            devices = []
-            if self.arrangement == 'grid':
-                d = 3 if self.dim[2] else 2
-                side_len = math.floor(self.init_num_devices**(1.0/d))
-            elif self.arrangement == 'tile': # only 2D
-                side_len = math.floor(self.init_num_devices**(1.0/2))
-            for i in range(self.init_num_devices):
-                if self.arrangement == 'grid':
-                    if self.dim[2]!=0:
-                        coord = numpy.array([self.width*math.floor(i/(side_len*side_len)),
-                                           self.height*((i/side_len) % side_len),
-                                           self.depth*(i % side_len)])/side_len
-                        coord -= numpy.array([self.width/2, self.height/2, self.depth/2])
-                    else:
-                        coord = numpy.array([self.width*math.floor(i/side_len), 
-                                           self.height*(i % side_len), 0])/side_len
-                        coord -= numpy.array([self.width/2, self.height/2, 0])
-                elif self.arrangement == 'tile':
-                    coord = numpy.array([self.width*math.floor(i/side_len), 
-                                           self.height*(i % side_len), 0])/side_len
-                    if i%2:
-                        coord += numpy.array([side_len/2, 0, 0])
-                    coord -= numpy.array([self.width/2, self.height/2, 0])
-                else:
-                    coord = numpy.array([(random.random()-0.5)*self.width, 
-                                       (random.random()-0.5)*self.height, 
-                                       (random.random()-0.5)*self.depth])
-                d = klass(coord = coord,
-                          id = i,
-                          cloud = self)
-                devices += [d]
-                if hasattr(d, "setup"):
-                    if args:
-                        d.setup(*args)
-                    else:
-                        d.setup()
+			devices = []
+			# side len is the number of devices per side
+			coords = []
+			if self.arrangement == 'grid':
+				d = 3 if self.dim[2] else 2
+				side_len = math.floor(self.init_num_devices**(1.0/d))
+				
+				for i in range(self.init_num_devices):
+					if self.dim[2]!=0:
+						coord = numpy.array([self.width*math.floor(i/(side_len*side_len)),
+				                           self.height*((i/side_len) % side_len),
+				                           self.depth*(i % side_len)])/side_len
+						coord -= numpy.array([self.width/2, self.height/2, self.depth/2])
+					else:
+						coord = numpy.array([self.width*math.floor(i/side_len), 
+				                           self.height*(i % side_len), 0])/side_len
+						coord -= numpy.array([self.width/2, self.height/2, 0])
+					coords += [coord]
+			elif self.arrangement == 'hex_tile': # only 2D
+				side_len = int(math.floor(self.init_num_devices**0.5))
+				for x in range(side_len):
+					for y in range(side_len):
+						_x = x
+						if y%2 == 1:
+							_x += 0.5
+						_y = y
+						coord = numpy.array([self.width*_x, 
+                                           self.height*_y, 0])/side_len
+						coord -= numpy.array([self.width/2, self.height/2, 0])
+						coords += [coord]
+			else:
+				for i in range(self.init_num_devices):
+					coord = numpy.array([(random.random()-0.5)*self.width, 
+						                       (random.random()-0.5)*self.height, 
+						                       (random.random()-0.5)*self.depth])
+					coords += [coord]
+
+			for i in range(self.init_num_devices):
+				d = klass(coord = coords[i],
+						  id = i,
+						  cloud = self)
+				devices += [d]
+				if hasattr(d, "setup"):
+					if args:
+						d.setup(*args)
+					else:
+						d.setup()
         self.devices = devices
         
         self.body_rad = self.body_rad if self.body_rad else (0.087*(self.width*self.height/len(devices)))**0.5
@@ -377,7 +388,7 @@ class _Cloud(object):
 
     @property
     def wall_hex_radius(self):
-        return math.floor(self.init_num_devices**(1.0/2))/2
+        return math.floor(self.init_num_devices**0.5)*0.65#*1/math.sqrt(3)
     @property
     def width(self):
         return self.dim[0]

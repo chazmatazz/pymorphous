@@ -71,10 +71,6 @@ class _BaseSimulatorWidget(QtOpenGL.QGLWidget):
         QtOpenGL.QGLWidget.__init__(self, parent)
         
         self.cloud = cloud
-        
-        self.xRot = 0
-        self.yRot = 0
-        self.zRot = 0
 
         self.selected_device = None
         
@@ -92,14 +88,7 @@ class _BaseSimulatorWidget(QtOpenGL.QGLWidget):
         for d in self.cloud.devices:
             d.color_id = _SimulatorUniqueColor()
             self.color_dict[str(d.color_id.value)] = d
-    
-    def __del__(self):
-        self.makeCurrent()
-        
-    def initializeGL(self):
-        glEnable(GL_DEPTH_TEST)
-        glutInit()
-    
+
     @property
     def xRotation(self):
         return self.xRot
@@ -165,25 +154,6 @@ class _BaseSimulatorWidget(QtOpenGL.QGLWidget):
     
     def paintGL(self):
         self.mypaint(True)
-
-    def set3dProjection(self, real=True):
-        glLoadIdentity();
-        glViewport(0, 0, self.width(), self.height())
-        if real:
-            glClearColor(*self.cloud.settings.graphics.background_color)
-            glEnable(GL_TEXTURE_2D)
-        else:
-            glClearColor(1,1,1,1)
-            glDisable(GL_LIGHTING)
-            glDisable(GL_TEXTURE_2D)
-            glDisable(GL_BLEND)
-            glShadeModel(GL_FLAT)
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
-        glMatrixMode(GL_PROJECTION)
-        
-    def resizeGL(self, width, height):
-        self.set3dProjection()
     
     def myupdate(self):
         now = time.time()
@@ -207,9 +177,7 @@ class _BaseSimulatorWidget(QtOpenGL.QGLWidget):
             return self.color_dict[r]
         except KeyError:
             return None
-
-def _simulator_graphics(cloud, widget):
-    app = QtGui.QApplication(sys.argv)
-    window = _SimulatorWindow(cloud = cloud, widget=widget)
-    window.show()
-    sys.exit(app.exec_())
+        
+    def resizeGL(self, width, height):
+        glViewport(0, 0, self.width(), self.height())
+        self.set3dProjection()

@@ -47,7 +47,6 @@ class _Graphics(dict):
         dict.__init__(self, *args, **kwargs)
         
         self['background_color'] = (0, 0, 0, 0)
-        self['background'] = None
         self['simple_body_color'] = (1, 0.25, 0, 0.8)
         self['selected_device_color'] = (1,1,1,0.2)
         self['radio_range_ring_color'] = (0.25, 0.25, 0.25, 0.8)
@@ -68,6 +67,11 @@ class _Graphics(dict):
         self['green_led_dim'] = (0.4, 8, 8)
         self['blue_led_dim'] = (0.4, 8, 8)
     
+        # wall
+        self['background_texture'] = "data/lab.jpg"
+        self['tile_texture'] = "data/white.jpg"
+        self['max_opacity'] = 0.7
+        
     def __getattr__(self, name):
         return self[name]
     

@@ -3,6 +3,7 @@ from PySide import QtCore, QtGui, QtOpenGL
 import sys
 import math
 import numpy
+import random
 
 try:
     from OpenGL.GL import *
@@ -26,51 +27,162 @@ class _WallGLWidget(core._BaseSimulatorWidget):
     def __init__(self, cloud, parent=None):
         core._BaseSimulatorWidget.__init__(self, cloud, parent)
     
+        self.xRot = 0
+        self.yRot = 0
+        self.zRot = 0
+        
     def __del__(self):
-        core._BaseSimulatorWidget.__del__(self)
-
-        glDeleteLists(self.listHexBody, 1)
+        self.makeCurrent()
+        
+        glDeleteLists(self.listBackgroundCube, 1)
+        glDeleteLists(self.listHex, 1)
 
     def initializeGL(self):
-        core._BaseSimulatorWidget.initializeGL(self)
+        glutInit()
         
-        if self.cloud.settings.graphics.background:
-            img = Image.open(self.cloud.settings.graphics.background) # .jpg, .bmp, etc. also work
-            img_data = numpy.array(list(img.getdata()), numpy.int8)
-            self.background_image_size = img.size
-            background_texture = glGenTextures(1)
-            glPixelStorei(GL_UNPACK_ALIGNMENT,1)
-            glBindTexture(GL_TEXTURE_2D, background_texture)
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.background_image_size[0], self.background_image_size[1], 
-                         0, GL_RGB, GL_UNSIGNED_BYTE, img_data)
-            
-            self.listBackground = glGenLists(1)
-            if not self.listBackground:
-                raise SystemError("""Unable to generate display list using glGenLists""")
-            glNewList(self.listBackground, GL_COMPILE)
-            glBegin(GL_QUADS)
-            w = self.background_image_size[1]
-            h = self.background_image_size[0]
-            for v in [(0,0), (w,0), (w,h), (0,h)]:
-                glTexCoord2d(*v)
-                glVertex2d(*v)
-            glEnd()
-            glEndList()
-            
-        self.listHexBody = glGenLists(1)
-        if not self.listHexBody:
+        self.textures = glGenTextures(2)
+        self.create_texture(self.cloud.settings.graphics.background_texture, 0)
+        self.create_texture(self.cloud.settings.graphics.tile_texture, 1)
+        self.background_texture = self.textures[0]
+        self.tile_texture = self.textures[1]
+        
+        self.listBackgroundCube = glGenLists(1)
+        if not self.listBackgroundCube:
             raise SystemError("""Unable to generate display list using glGenLists""")
-        glNewList(self.listHexBody, GL_COMPILE)
-        glBegin(GL_POLYGON)
+        glNewList(self.listBackgroundCube, GL_COMPILE)
+        wmax = 150
+        glBegin(GL_QUADS)		                # begin drawing a cube
+
+        # Front Face (note that the texture's corners have to match the quad's corners)
+        glNormal3f(0, 0, -1)
+        
+        glTexCoord2f(0, 0)
+        glVertex3f(-wmax, -wmax, wmax)	# Bottom Left Of The Texture and Quad
+        
+        glTexCoord2f(0, 0) 
+        glVertex3f(wmax,-wmax, wmax)	# Bottom Right Of The Texture and Quad
+        
+        glTexCoord2f(1, 1) 
+        glVertex3f(wmax, wmax, wmax)	# Top Right Of The Texture and Quad
+        
+        glTexCoord2f(0, 1) 
+        glVertex3f(-wmax, wmax, wmax)	# Top Left Of The Texture and Quad
+
+        # Back Face
+        glNormal3f(0, 0, 1)
+        glTexCoord2f(1, 0) 
+        glVertex3f(-wmax, -wmax, -wmax)	# Bottom Right Of The Texture and Quad
+        
+        glTexCoord2f(1, 1) 
+        glVertex3f(-wmax,  wmax, -wmax)	# Top Right Of The Texture and Quad
+        
+        glTexCoord2f(0, 1) 
+        glVertex3f(wmax,  wmax, -wmax)	# Top Left Of The Texture and Quad
+        
+        glTexCoord2f(0, 0) 
+        glVertex3f(wmax, -wmax, -wmax)	# Bottom Left Of The Texture and Quad
+
+        # Top Face
+        glNormal3f(0, -1, 0)
+        
+        glTexCoord2f(0, 1) 
+        glVertex3f(-wmax, wmax, -wmax)	# Top Left Of The Texture and Quad
+        
+        glTexCoord2f(0, 0) 
+        glVertex3f(-wmax, wmax, wmax)	# Bottom Left Of The Texture and Quad
+        
+        glTexCoord2f(1, 0) 
+        glVertex3f(wmax, wmax, wmax)	# Bottom Right Of The Texture and Quad
+        
+        glTexCoord2f(1, 1) 
+        glVertex3f(wmax, wmax, -wmax)	# Top Right Of The Texture and Quad
+
+        # Bottom Face
+        glNormal3f(0, 1, 0)
+        
+        glTexCoord2f(1, 1) 
+        glVertex3f(-wmax, -wmax, -wmax)	# Top Right Of The Texture and Quad
+        
+        glTexCoord2f(0, 1) 
+        glVertex3f(wmax, -wmax, -wmax)	# Top Left Of The Texture and Quad
+        
+        glTexCoord2f(0, 0) 
+        glVertex3f(wmax, -wmax, wmax)	# Bottom Left Of The Texture and Quad
+        
+        glTexCoord2f(1, 0) 
+        glVertex3f(-wmax, -wmax, wmax)	# Bottom Right Of The Texture and Quad
+
+        # Right face
+        glNormal3f(-1, 0, 0)
+        
+        glTexCoord2f(1, 0) 
+        glVertex3f(wmax, -wmax, -wmax)	# Bottom Right Of The Texture and Quad
+        
+        glTexCoord2f(1, 1) 
+        glVertex3f(wmax, wmax, -wmax)	# Top Right Of The Texture and Quad
+        
+        glTexCoord2f(0, 1) 
+        glVertex3f(wmax, wmax, wmax)	# Top Left Of The Texture and Quad
+        
+        glTexCoord2f(0, 0) 
+        glVertex3f(wmax, -wmax, wmax)	# Bottom Left Of The Texture and Quad
+
+        # Left Face
+        glNormal3f(1, 0, 0)
+        
+        glTexCoord2f(0, 0) 
+        glVertex3f(-wmax, -wmax, -wmax)	# Bottom Left Of The Texture and Quad
+        
+        glTexCoord2f(1, 0) 
+        glVertex3f(-wmax, -wmax, wmax)	# Bottom Right Of The Texture and Quad
+        
+        glTexCoord2f(1, 1) 
+        glVertex3f(-wmax, wmax, wmax)	# Top Right Of The Texture and Quad
+        
+        glTexCoord2f(0, 1) 
+        glVertex3f(-wmax, wmax, -wmax)	# Top Left Of The Texture and Quad
+
+        glEnd()                                    # done with the polygon.
+        glEndList()
+        
+        self.listHex = glGenLists(1)
+        if not self.listHex:
+            raise SystemError("""Unable to generate display list using glGenLists""")
+        glNewList(self.listHex, GL_COMPILE)
         r = self.cloud.wall_hex_radius
+        glBegin(GL_POLYGON)
+        glNormal3f(0,0,-1)
         for i in range(6):
-            glVertex2d(r*math.cos(i/6.0*2*math.pi),r*math.sin(i/6.0*2*math.pi))
+           glTexCoord2f(0,0)
+           glVertex2d(r*math.sin(i/6.0*2*math.pi),r*math.cos(i/6.0*2*math.pi))
         glEnd()
         glEndList()
+        
+
+        glClearDepth(1.0)				# Enables Clearing Of The Depth Buffer
+        glDepthFunc(GL_LESS)			# The Type Of Depth Test To Do
+        glEnable(GL_DEPTH_TEST)
+        self.setMode(True)
+        self.set3dProjection()
+        
+        # set up light number 1
+        glLightfv(GL_LIGHT1, GL_AMBIENT, [ 1, 1, 1, 1 ]) # white ambient light at half intensity (rgba)
+        glLightfv(GL_LIGHT1, GL_DIFFUSE, [ 1, 1, 1, 1 ]) # super bright, full intensity diffuse light
+        glLightfv(GL_LIGHT1, GL_POSITION,[ 10, 10, 2.0, 1 ]) # position of light (x, y, z, (position of light))
+        glEnable(GL_LIGHT1)                             # turn light 1 on.
+        
+        glEnable(GL_COLOR_MATERIAL)
+        
+    def create_texture(self, filename, index):
+        img = Image.open(filename)
+        data = img.tostring("raw", "RGBX", 0, -1)
+        
+        glBindTexture(GL_TEXTURE_2D, self.textures[index])
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR)  # scale linearly when image bigger than texture
+        glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR_MIPMAP_NEAREST)  # scale linearly + mipmap when image smalled than texture
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.size[0], img.size[1], 0, GL_RGBA, GL_UNSIGNED_BYTE, data)
+        # 2d texture, 3 colors, width, height, RGB in that order, byte data, and the data.
+        gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, img.size[0], img.size[1], GL_RGBA, GL_UNSIGNED_BYTE, data)
     
     def tabletEvent(self, event):
         for d in self.cloud.devices:
@@ -79,7 +191,6 @@ class _WallGLWidget(core._BaseSimulatorWidget):
             selected_device = self.select_device(event)
             if selected_device:
                 selected_device.sense0 = event.pressure()
-    
     def keyPressEvent(self, event):
         key = event.key()
         
@@ -89,18 +200,37 @@ class _WallGLWidget(core._BaseSimulatorWidget):
             self.recording = True
         if key == QtCore.Qt.Key_S:
             self.recording = False
+
+        dirs = {QtCore.Qt.Key_Left: [-1,0],
+                QtCore.Qt.Key_Right: [1,0],
+                QtCore.Qt.Key_Up: [0,1],
+                QtCore.Qt.Key_Down: [0,-1]}
+        for (k,v) in dirs.items():
+            if key == k:
+                self.yRot -= 10*v[0]
+                self.xRot -= 10*v[1]
+                self.updateGL()
+            
         
         
     def mypaint(self, real):
-        self.set3dProjection(real)
+        self.setMode(real)
+        self.set3dProjection()
+        
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
         
         if real:
             glPushMatrix()
-            glTranslatef(-self.background_image_size[0]/2,-self.background_image_size[1]/2,-30)
-            glColor3f(1,1,1)
-            glCallList(self.listBackground)
+            glTranslate(0,0,-160)
+            glBindTexture(GL_TEXTURE_2D, self.background_texture)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+            glColor4f(1, 1, 1, 1)
+            glCallList(self.listBackgroundCube)
             glPopMatrix()
-            
+        
+        if real:
+            glBindTexture(GL_TEXTURE_2D, self.tile_texture)
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         for d in self.cloud.devices:
             x = d.x
             y = d.y
@@ -108,25 +238,51 @@ class _WallGLWidget(core._BaseSimulatorWidget):
             glPushMatrix()
             glTranslatef(x,y,z)
             if real:
-                glColor4f(0,0,0,d.blue)
+                color = (d.green%(2*math.pi))/(2*math.pi)*self.cloud.settings.graphics.max_opacity
+                glColor4f(1, 1, 1, color)
             else:
                 glColor3b(d.color_id.red, d.color_id.green, d.color_id.blue)
-            glCallList(self.listHexBody)
+            
+            glCallList(self.listHex)
             glPopMatrix()
-        
         if real:
             if self.recording:
                 self.save_image(image=False)
             self.frameno += 1
 
-    def set3dProjection(self, real=True):
-        core._BaseSimulatorWidget.set3dProjection(self, real)
-        gluPerspective(45.0,float(self.width())/self.height(),0.1,200.0)    #setup lens
-        glTranslatef(0, 0, -150.0)                #move back
+    def setMode(self, real):
+        if real:
+            glClearColor(*self.cloud.settings.graphics.background_color)
+            glEnable(GL_LIGHTING)
+            glEnable(GL_TEXTURE_2D)
+            glEnable(GL_BLEND)
+            glShadeModel(GL_SMOOTH)
+        else:
+            glClearColor(1,1,1,1)
+            glDisable(GL_LIGHTING)
+            glDisable(GL_TEXTURE_2D)
+            glDisable(GL_BLEND)
+            glShadeModel(GL_FLAT)
+
+    def set3dProjection(self):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+
+        gluPerspective(45.0,float(self.width())/self.height(),0.1,200)    #setup lens
+        glTranslatef(0, 0, -150)                #move back
         #glRotatef(60, 1, 60, 90)                       #orbit higher
-        glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
-        glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
-        glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
+        glRotated(self.xRot / 16.0, 1, 0, 0)
+        glRotated(self.yRot / 16.0, 0, 1, 0)
+        glRotated(self.zRot / 16.0, 0, 0, 1)
+
+        glMatrixMode(GL_MODELVIEW)
+
 
 def wall_graphics(cloud):
-    core._simulator_graphics(cloud, _WallGLWidget)
+    fmt = QtOpenGL.QGLFormat()
+    fmt.setAlpha(True)
+    QtOpenGL.QGLFormat.setDefaultFormat(fmt)
+    app = QtGui.QApplication(sys.argv)
+    window = core._SimulatorWindow(cloud = cloud, widget=_WallGLWidget)
+    window.show()
+    sys.exit(app.exec_())
