@@ -173,6 +173,8 @@ class _WallGLWidget(core._BaseSimulatorWidget):
         
         glEnable(GL_COLOR_MATERIAL)
         
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        
     def create_texture(self, filename, index):
         img = Image.open(filename)
         data = img.tostring("raw", "RGBX", 0, -1)
@@ -223,23 +225,20 @@ class _WallGLWidget(core._BaseSimulatorWidget):
             glPushMatrix()
             glTranslate(0,0,-160)
             glBindTexture(GL_TEXTURE_2D, self.background_texture)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glColor4f(1, 1, 1, 1)
             glCallList(self.listBackgroundCube)
             glPopMatrix()
         
         if real:
             glBindTexture(GL_TEXTURE_2D, self.tile_texture)
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         for d in self.cloud.devices:
             x = d.x
             y = d.y
             z = d.z
             glPushMatrix()
             glTranslatef(x,y,z)
-            if real:
-                color = (d.green%(2*math.pi))/(2*math.pi)*self.cloud.settings.graphics.max_opacity
-                glColor4f(1, 1, 1, color)
+            if real: 
+                glColor4f(1, 1, 1, d.blue*self.cloud.settings.graphics.max_opacity)
             else:
                 glColor3b(d.color_id.red, d.color_id.green, d.color_id.blue)
             
