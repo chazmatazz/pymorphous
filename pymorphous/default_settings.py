@@ -68,10 +68,16 @@ class _Graphics(dict):
         self['blue_led_dim'] = (0.4, 8, 8)
     
         # wall
-        self['background_texture'] = "data/lab.jpg"
-        self['tile_texture'] = "data/white.jpg"
-        self['max_opacity'] = 0.7
-        
+        self['wall_background_texture'] = "data/wall/textures/background.jpg"
+        self['wall_pdlc_texture'] = "data/wall/textures/pdlc.jpg"
+        self['wall_red_led_texture'] = "data/wall/textures/red_led.jpg"
+        self['wall_green_led_texture'] = 'data/wall/textures/green_led.jpg'
+        self['wall_max_opacity'] = 0.7
+        self['wall_red_led_dim'] = (0.4, 8, 8)
+        self['wall_green_led_dim'] = (0.4, 8, 8)
+        self['wall_red_led_offset'] = (1,0,0)
+        self['wall_green_led_offset'] = (-1,0,0)
+    
     def __getattr__(self, name):
         return self[name]
     

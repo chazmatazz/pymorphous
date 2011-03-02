@@ -40,12 +40,16 @@ class _WallGLWidget(core._BaseSimulatorWidget):
     def initializeGL(self):
         glutInit()
         
-        self.textures = glGenTextures(2)
-        self.create_texture(self.cloud.settings.graphics.background_texture, 0)
-        self.create_texture(self.cloud.settings.graphics.tile_texture, 1)
+        self.textures = glGenTextures(4)
+        self.create_texture(self.cloud.settings.graphics.wall_background_texture, 0)
+        self.create_texture(self.cloud.settings.graphics.wall_pdlc_texture, 1)
+        self.create_texture(self.cloud.settings.graphics.wall_red_led_texture, 2)
+        self.create_texture(self.cloud.settings.graphics.wall_green_led_texture, 3)
         self.background_texture = self.textures[0]
-        self.tile_texture = self.textures[1]
-        
+        self.pdlc_texture = self.textures[1]
+        self.red_led_texture = self.textures[2]
+        self.green_led_texture = self.textures[3]
+
         self.listBackgroundCube = glGenLists(1)
         if not self.listBackgroundCube:
             raise SystemError("""Unable to generate display list using glGenLists""")
@@ -158,6 +162,19 @@ class _WallGLWidget(core._BaseSimulatorWidget):
         glEnd()
         glEndList()
         
+        self.listRedLed = glGenLists(1)
+        if not self.listRedLed:
+            raise SystemError("""Unable to generate display list using glGenLists""")
+        glNewList(self.listRedLed, GL_COMPILE)
+        glutSolidSphere(*self.cloud.settings.graphics.wall_red_led_dim)
+        glEndList()
+        
+        self.listGreenLed = glGenLists(1)
+        if not self.listGreenLed:
+            raise SystemError("""Unable to generate display list using glGenLists""")
+        glNewList(self.listGreenLed, GL_COMPILE)
+        glutSolidSphere(*self.cloud.settings.graphics.wall_green_led_dim)
+        glEndList()
 
         glClearDepth(1.0)				# Enables Clearing Of The Depth Buffer
         glDepthFunc(GL_LESS)			# The Type Of Depth Test To Do
@@ -229,20 +246,36 @@ class _WallGLWidget(core._BaseSimulatorWidget):
             glCallList(self.listBackgroundCube)
             glPopMatrix()
         
-        if real:
-            glBindTexture(GL_TEXTURE_2D, self.tile_texture)
         for d in self.cloud.devices:
             x = d.x
             y = d.y
             z = d.z
             glPushMatrix()
             glTranslatef(x,y,z)
-            if real: 
-                glColor4f(1, 1, 1, d.blue*self.cloud.settings.graphics.max_opacity)
+            if real:
+                glBindTexture(GL_TEXTURE_2D, self.pdlc_texture)
+                glColor4f(1,1,1,d.blue*self.cloud.settings.graphics.wall_max_opacity)
             else:
                 glColor3b(d.color_id.red, d.color_id.green, d.color_id.blue)
-            
             glCallList(self.listHex)
+            
+            if real:
+                # red
+                glBindTexture(GL_TEXTURE_2D, self.red_led_texture)
+                glColor4f(1,1,1,d.red)
+                glPushMatrix()
+                glTranslate(*self.cloud.settings.graphics.wall_red_led_offset)
+                glCallList(self.listRedLed)
+                glPopMatrix()
+                
+                # green
+                glBindTexture(GL_TEXTURE_2D, self.green_led_texture)
+                glColor4f(1,1,1,d.green)
+                glPushMatrix()
+                glTranslate(*self.cloud.settings.graphics.wall_green_led_offset)
+                glCallList(self.listGreenLed)
+                glPopMatrix()
+                
             glPopMatrix()
         if real:
             if self.recording:

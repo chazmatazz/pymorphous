@@ -158,6 +158,8 @@ class _BaseDevice(object):
         self._dt = 0
         self._nbr_range = _Field()
         self._root_frame = None
+        self.step_count = 0
+        self.time = 0
     
     @property
     def radio_range(self):
@@ -290,7 +292,9 @@ class _BaseDevice(object):
         if numpy.any(self.velocity):
             self.coord_changed = True
             self.coord += self.velocity
-    
+        self.step_count += 1
+        self.time += self.dt
+        
     def int_hood(self, field):
         """ return the integral of expr over the neighborhood """
         return numpy.sum(field.not_none_values(), axis=0)
