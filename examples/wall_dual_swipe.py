@@ -1,6 +1,9 @@
 from pymorphous.core import *
 
-class WallSwipe(Device):
+class WallDualSwipe(Device):
+    """
+    Swipe right to clear, left to make cloudy
+    """
     timeout = 1
     min_line_length = 3
     delta_y = 0
@@ -77,5 +80,5 @@ class WallSwipe(Device):
         self.prev_sense = self.sense0
         
         
-spawn_cloud(klass=WallSwipe)
+spawn_cloud(klass=WallDualSwipe)
 
