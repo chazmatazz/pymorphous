@@ -43,15 +43,16 @@ class WallSwipe(Device):
         if self.tracking:
             max_nbr_left_count = 0
             for (k,v) in self.field.items():
-                (left_count, coord) = v
-                if left_count > -1 and self.is_left_nbr(coord): 
+                coord = k.coord
+                (left_count, tracking_start_time) = v
+                if self.is_left_nbr(coord) and tracking_start_time < self.tracking_start_time:
                     max_nbr_left_count = max(max_nbr_left_count, left_count)
             
             self.left_count = max_nbr_left_count + 1
         else:
             self.left_count = -1
             
-        self.field = self.nbr((self.left_count, self.coord))
+        self.field = self.nbr((self.left_count, self.tracking_start_time))
             
         self.prev_sense = self.sense0
         
