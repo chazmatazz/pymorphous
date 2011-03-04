@@ -32,10 +32,13 @@ class _Field(dict):
         ret = _Field()
         if isinstance(other, _Field):
             for k in self.keys():
-                if self[k]!=None and other[k]!=None:
-                    ret[k] = op(self[k], other[k])
-                else:
-                    ret[k] = None       
+                try:
+                  if self[k]!=None and other[k]!=None:
+                      ret[k] = op(self[k], other[k])
+                  else:
+                      ret[k] = None
+                except KeyError:
+                  ret[k] = None
         else:
             for k in self.keys():
                 if self[k]!=None:
@@ -57,10 +60,13 @@ class _Field(dict):
         ret = _Field()
         if isinstance(other, _Field):
             for k in self.keys():
-                if self[k]!=None and other[k]!=None:
-                    ret[k] = op(other[k], self[k])
-                else:
-                    ret[k] = None       
+                try:
+                  if self[k]!=None and other[k]!=None:
+                      ret[k] = op(other[k], self[k])
+                  else:
+                      ret[k] = None
+                except KeyError: 
+                  ret[k] = None
         else:
             for k in self.keys():
                 if self[k]!=None:
@@ -70,13 +76,15 @@ class _Field(dict):
         return ret
     
     def _iop(self, other, iop):
-        print self, iop, other
         if isinstance(other, _Field):
             for k in self.keys():
-                if self[k]!=None and other[k]!=None:
-                    iop(self[k], other[k])
-                else:
-                    self[k] = None
+                try:
+                  if self[k]!=None and other[k]!=None:
+                      iop(self[k], other[k])
+                  else:
+                      self[k] = None
+                except KeyError:
+                  self[k] = None
         else:
             for k in self.keys():
                 if self[k]!=None:
@@ -95,7 +103,7 @@ class _Field(dict):
         return self._rop(other, operator.add)
     
     def __rsub__(self, other):
-        return self._op(other, operator.sub)
+        return self._rop(other, operator.sub)
     
     def __iadd__(self, other):
         return self._iop(other, operator.iadd)
@@ -227,16 +235,6 @@ class _BaseDevice(object):
     def coord(self, new_coord):
         self.cloud.coord_changed = True
         self._coord = new_coord
-    
-    def get_tag(self, extra_tag=None):
-        if _USE_SAFE_NBR:
-            tag = repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
-        else:
-            tag = repr(["%s:%d" % (frame[1], frame[2]) for frame in  pymorphous.fastinspect.stack(stop=self._root_frame)])
-        if extra_tag:
-            return "%s%s" % (tag, extra_tag)
-        else:
-            return tag
     
     def nbr(self, val, extra_tag=None):
         tag = self.get_tag(extra_tag)
