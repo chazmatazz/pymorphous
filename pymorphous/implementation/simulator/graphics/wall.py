@@ -203,13 +203,23 @@ class _WallGLWidget(core._BaseSimulatorWidget):
         # 2d texture, 3 colors, width, height, RGB in that order, byte data, and the data.
         gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, img.size[0], img.size[1], GL_RGBA, GL_UNSIGNED_BYTE, data)
     
-    def tabletEvent(self, event):
+    def do_event(self, event, pressure):
         for d in self.cloud.devices:
             d._reset_senses()
-        if(event.pressure() > 0):
+        if(pressure > 0):
             selected_device = self.select_device(event)
             if selected_device:
-                selected_device.sense0 = event.pressure()
+                selected_device.sense0 = pressure
+    
+    def mousePressEvent(self, event):
+        pass
+
+    def mouseMoveEvent(self, event):
+        self.do_event(event, 1)
+    
+    def tabletEvent(self, event):
+        self.do_event(event, event.pressure())
+                
     def keyPressEvent(self, event):
         key = event.key()
         
