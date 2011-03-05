@@ -1,8 +1,8 @@
 from pymorphous.core import *
 
-class WallTracking2(Device):
+class WallTracking(Device):
     timeout = 1
-    threshold = 1
+    threshold = 0.01
     def setup(self):
         
         self.prev_sense = 0
@@ -24,11 +24,12 @@ class WallTracking2(Device):
         return self.time - self.tracking_start_time
     
     def is_close(self, coord):
-        v = abs(numpy.sum(self.coord - coord))
-        return v <= self.threshold
+        v = self.coord - coord
+        return numpy.dot(v,v) <= self.threshold
     
     def is_my_coord(self, coord):
-        return numpy.sum(self.coord - coord) == 0
+        v = self.coord - coord
+        return numpy.dot(v,v) == 0
     
     def step(self):
         self.red = self.sense0
@@ -67,5 +68,5 @@ class WallTracking2(Device):
         self.prev_sense = self.sense0
         
         
-spawn_cloud(klass=WallTracking2)
+spawn_cloud(klass=WallTracking)
 

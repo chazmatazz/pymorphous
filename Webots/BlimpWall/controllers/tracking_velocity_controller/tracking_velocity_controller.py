@@ -27,16 +27,16 @@ class WallTracking(Device):
     
     def is_close(self, coord):
         v = self.coord - coord
-        return abs(numpy.dot(v,v)) <= self.threshold
+        return numpy.dot(v, v) <= self.threshold
     
     def is_my_coord(self, coord):
-	v = self.coord - coord
-        return numpy.dot(v,v) == 0
+        v = self.coord - coord
+        return numpy.dot(v, v) == 0
     
     def step(self):
         self.red = self.sense0
-        self.green = 255*self.tracking
-        self.blue = 255*self.is_next
+        self.green = 255 * self.tracking
+        self.blue = 255 * self.is_next
         
         if self.sense0:
             if not self.prev_sense: #rising edge
@@ -50,11 +50,11 @@ class WallTracking(Device):
         
         max_tracking_start_time = -1
         most_recent_coord = None
-        for (k,v) in self.field.items():
+        for (k, v) in self.field.items():
             if v:
                 (coord, tracking_start_time, delta) = v
                 if not self.is_my_coord(coord): # loop over neighbors only (redundant?)
-                    if (self.tracking and tracking_start_time>-1 and tracking_start_time < self.tracking_start_time 
+                    if (self.tracking and tracking_start_time > -1 and tracking_start_time < self.tracking_start_time 
                         and tracking_start_time > max_tracking_start_time):
                         max_tracking_start_time = tracking_start_time
                         most_recent_coord = coord
