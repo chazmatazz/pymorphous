@@ -9,6 +9,7 @@ import inspect
 import controller
 import uuid
 import pickle
+import numpy
 
 from pymorphous.implementation.simulator.runtime import _Field, _NbrKeyError
 
@@ -54,6 +55,9 @@ class _BaseDevice(object):
         self._leds = self._Leds(self)
         self._senses = self._Senses(self)
 	self._num_transmitters = 6
+	self.time = time.time()
+	self.gps = self._webot_robot.getGPS('gps')
+	self.gps.enable(self._webot_robot.timeStep)
 	for i in range(self._num_transmitters):
 		self._webot_robot.getReceiver("receiver" + str(i + 1)).enable(self._webot_robot.timeStep)  
     
@@ -147,7 +151,7 @@ class _BaseDevice(object):
     
     @property
     def coord(self):
-        return self._coord
+        return numpy.array(self.gps.getValues())
     
     @coord.setter
     def coord(self, new_coord):
@@ -225,6 +229,7 @@ class _BaseDevice(object):
      
         self.step()
         self._time = time.time()
+	self.time = self._time
         
 	for i in range(self._num_transmitters):
 	    msg = pickle.dumps(_Message(self.id, self._time, self._data))

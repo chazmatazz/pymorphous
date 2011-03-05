@@ -8,6 +8,9 @@ Defines the public interface for pymorphous:
 """
 
 import pymorphous.constants
+import pymorphous.fastinspect
+
+_USE_SAFE_NBR = False
 
 try:
     import settings
@@ -112,6 +115,16 @@ class BaseDevice(runtime._BaseDevice):
         
     def _reset_senses(self):
         self.senses = [0,0,0]
+    
+    def get_tag(self, extra_tag=None):
+        if _USE_SAFE_NBR:
+            tag = repr(["%s:%d" % (f[1], f[2]) for f in inspect.stack(context=0)])
+        else:
+            tag = repr(["%s:%d" % (frame[1], frame[2]) for frame in  pymorphous.fastinspect.stack(stop=self._root_frame)])
+        if extra_tag:
+            return "%s%s" % (tag, extra_tag)
+        else:
+            return tag
 
 def spawn_cloud(*args, **kwargs):
     return runtime._spawn_cloud(settings, *args, **kwargs)
