@@ -32,13 +32,13 @@ class _Field(dict):
         ret = _Field()
         if isinstance(other, _Field):
             for k in self.keys():
-                if self[k]!=None and other[k]!=None:
+                if self[k] != None and other[k] != None:
                     ret[k] = op(self[k], other[k])
                 else:
                     ret[k] = None       
         else:
             for k in self.keys():
-                if self[k]!=None:
+                if self[k] != None:
                     ret[k] = op(self[k], other)
                 else:
                     ret[k] = None
@@ -57,13 +57,13 @@ class _Field(dict):
         ret = _Field()
         if isinstance(other, _Field):
             for k in self.keys():
-                if self[k]!=None and other[k]!=None:
+                if self[k] != None and other[k] != None:
                     ret[k] = op(other[k], self[k])
                 else:
                     ret[k] = None       
         else:
             for k in self.keys():
-                if self[k]!=None:
+                if self[k] != None:
                     ret[k] = op(other, self[k])
                 else:
                     ret[k] = None
@@ -73,13 +73,13 @@ class _Field(dict):
         print self, iop, other
         if isinstance(other, _Field):
             for k in self.keys():
-                if self[k]!=None and other[k]!=None:
+                if self[k] != None and other[k] != None:
                     iop(self[k], other[k])
                 else:
                     self[k] = None
         else:
             for k in self.keys():
-                if self[k]!=None:
+                if self[k] != None:
                     iop(self[k], other)
                 else:
                     self[k] = None
@@ -139,7 +139,7 @@ class _Field(dict):
     def not_none_values(self):
         ret = []
         for v in self.values():
-            if v!=None:
+            if v != None:
                 ret += [v]
         return ret
 
@@ -147,7 +147,7 @@ class _BaseDevice(object):
     def __init__(self, coord, id, cloud):
         # coord is a numpy.array
         self._coord = coord
-        self._velocity = numpy.array([0,0,0])
+        self._velocity = numpy.array([0, 0, 0])
         self._id = id
         self.cloud = cloud
         self._leds = [0, 0, 0]
@@ -301,7 +301,7 @@ class _BaseDevice(object):
     
     def fold_hood_star(self, fold, base, field):
         acc = base
-        for (k,v) in field.items():
+        for (k, v) in field.items():
             acc = fold(acc, v)
         return acc
     
@@ -309,13 +309,13 @@ class _BaseDevice(object):
         return self.fold_hood_star(fold, base, self.nbr(value))
 
 class _Cloud(object):
-    def __init__(self, settings, 
+    def __init__(self, settings,
                  klass=None, args=None, devices=None, **kwargs):
         self.settings = settings
         for (k, v) in settings.runtime.items():
             self.__dict__[k] = v #setattr does not work with new-style classes
         
-        for (k,v) in kwargs.items():
+        for (k, v) in kwargs.items():
             if not hasattr(self, k):
                 raise Exception("no argument", k)
             if v != pymorphous.constants.UNSPECIFIED:
@@ -326,7 +326,7 @@ class _Cloud(object):
         assert(self.steps_per_frame == int(self.steps_per_frame) and self.steps_per_frame > 0)
         
         if self._3D:
-            if len(self.dim)==3:
+            if len(self.dim) == 3:
                 self.dim[2] = self.z_dim
             
         if len(self.dim) == 1:
@@ -335,56 +335,56 @@ class _Cloud(object):
             self.dim = self.dim + SIMULATOR_DEFAULTS.RUNTIME.DIM[2:] if self._3D else [100]
         
         if not devices:
-			devices = []
-			# side len is the number of devices per side
-			coords = []
-			if self.arrangement == 'grid':
-				d = 3 if self.dim[2] else 2
-				side_len = math.floor(self.init_num_devices**(1.0/d))
-				
-				for i in range(self.init_num_devices):
-					if self.dim[2]!=0:
-						coord = numpy.array([self.width*math.floor(i/(side_len*side_len)),
-				                           self.height*((i/side_len) % side_len),
-				                           self.depth*(i % side_len)])/side_len
-						coord -= numpy.array([self.width/2, self.height/2, self.depth/2])
-					else:
-						coord = numpy.array([self.width*math.floor(i/side_len), 
-				                           self.height*(i % side_len), 0])/side_len
-						coord -= numpy.array([self.width/2, self.height/2, 0])
-					coords += [coord]
-			elif self.arrangement == 'hex_tile': # only 2D
-				side_len = int(math.floor(self.init_num_devices**0.5))
-				for x in range(side_len):
-					for y in range(side_len):
-						_x = x
-						if y%2 == 1:
-							_x += 0.5
-						_y = y
-						coord = numpy.array([self.width*_x, 
-                                           self.height*_y, 0])/side_len
-						coord -= numpy.array([self.width/2, self.height/2, 0])
-						coords += [coord]
-			else:
-				for i in range(self.init_num_devices):
-					coord = numpy.array([(random.random()-0.5)*self.width, 
-						                       (random.random()-0.5)*self.height, 
-						                       (random.random()-0.5)*self.depth])
-					coords += [coord]
+            devices = []
+            # side len is the number of devices per side
+            coords = []
+            if self.arrangement == 'grid':
+                d = 3 if self.dim[2] else 2
+                side_len = math.floor(self.init_num_devices ** (1.0 / d))
+                
+                for i in range(self.init_num_devices):
+                    if self.dim[2] != 0:
+                        coord = numpy.array([self.width * math.floor(i / (side_len * side_len)),
+                                           self.height * ((i / side_len) % side_len),
+                                           self.depth * (i % side_len)]) / side_len
+                        coord -= numpy.array([self.width / 2, self.height / 2, self.depth / 2])
+                    else:
+                        coord = numpy.array([self.width * math.floor(i / side_len),
+                                           self.height * (i % side_len), 0]) / side_len
+                        coord -= numpy.array([self.width / 2, self.height / 2, 0])
+                    coords += [coord]
+            elif self.arrangement == 'hex_tile': # only 2D
+                side_len = int(math.floor(self.init_num_devices ** 0.5))
+                for x in range(side_len):
+                    for y in range(side_len):
+                        _x = x
+                        if y % 2 == 1:
+                            _x += 0.5
+                        _y = y
+                        coord = numpy.array([self.width * _x,
+                                           self.height * _y, 0]) / side_len
+                        coord -= numpy.array([self.width / 2, self.height / 2, 0])
+                        coords += [coord]
+            else:
+                for i in range(self.init_num_devices):
+                    coord = numpy.array([(random.random() - 0.5) * self.width,
+                                               (random.random() - 0.5) * self.height,
+                                               (random.random() - 0.5) * self.depth])
+                    coords += [coord]
 
-			for i in range(self.init_num_devices):
-				d = klass(coord = coords[i],
-						  id = i,
-						  cloud = self)
-				devices += [d]
-				if hasattr(d, "setup"):
-					if args:
-						d.setup(*args)
-					else:
-						d.setup()
+            for i in range(len(coords)):
+                d = klass(coord=coords[i],
+                          id=i,
+                          cloud=self)
+                devices += [d]
+                if hasattr(d, "setup"):
+                    if args:
+                        d.setup(*args)
+                    else:
+                        d.setup()
         self.devices = devices
         
-        self.body_rad = self.body_rad if self.body_rad else (0.087*(self.width*self.height/len(devices)))**0.5
+        self.body_rad = self.body_rad if self.body_rad else (0.087 * (self.width * self.height / len(devices))) ** 0.5
         self.window_title = self.window_title if self.window_title else klass.__name__
         
         self.coord_changed = True
@@ -392,7 +392,7 @@ class _Cloud(object):
 
     @property
     def wall_hex_radius(self):
-        return math.floor(self.init_num_devices**0.5)*0.65#*1/math.sqrt(3)
+        return self.height * 1/math.floor(self.init_num_devices ** 0.5) * 0.65
     @property
     def width(self):
         return self.dim[0]
@@ -411,20 +411,20 @@ class _Cloud(object):
     
     def update(self, time_passed):
         epsilon = 0.01
-        time_passed = time_passed if time_passed!=0 else epsilon
+        time_passed = time_passed if time_passed != 0 else epsilon
         for i in range(self.steps_per_frame):
-            milliseconds = float(time_passed)/self.steps_per_frame
+            milliseconds = float(time_passed) / self.steps_per_frame
             if _DEBUG_PRINT_MS:
                 self.mss += [milliseconds]
                 _mss = self.mss[10:]
                 if(len(_mss) % 100):
-                    print "milliseconds=%s" % _mss[len(_mss)-1]
+                    print "milliseconds=%s" % _mss[len(_mss) - 1]
             if self.coord_changed:
                 point_matrix = numpy.array([d.coord for d in self.devices])
                 kdtree = KDTree(point_matrix)
                 for d in self.devices:
                     d._nbrs = []
-                for (i,j) in kdtree.query_pairs(self.radio_range):
+                for (i, j) in kdtree.query_pairs(self.radio_range):
                     self.devices[i]._nbrs += [self.devices[j]]
                     self.devices[j]._nbrs += [self.devices[i]]
                 for d in self.devices:
@@ -432,7 +432,7 @@ class _Cloud(object):
                     d._nbr_vec = _Field()
                     for n in d._nbrs + [d]:
                         delta = n.coord - d.coord
-                        d._nbr_range[n] = numpy.dot(delta, delta)**0.5
+                        d._nbr_range[n] = numpy.dot(delta, delta) ** 0.5
                         d._nbr_vec[n] = delta
             self.coord_changed = False
             for d in self.devices:
