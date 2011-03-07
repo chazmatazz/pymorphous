@@ -204,6 +204,9 @@ class _WallGLWidget(core._BaseSimulatorWidget):
         gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, img.size[0], img.size[1], GL_RGBA, GL_UNSIGNED_BYTE, data)
     
     def do_event(self, event, pressure):
+        if self.cloud.settings.graphics.show_pointer:
+            self.event_pos = event.pos()
+            self.pressure = pressure
         for d in self.cloud.devices:
             d._reset_senses()
         if(pressure > 0):
