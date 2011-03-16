@@ -75,7 +75,7 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
         if not self.listRadio:
             raise SystemError("""Unable to generate display list using glGenLists""")
         glNewList(self.listRadio, GL_COMPILE)
-        glutSolidSphere(0.8*4, 8, 8) # TODO
+        glutSolidSphere(0.8 * 4, 8, 8) # TODO
         glEndList()
         
         self.listBlendLed = glGenLists(1)
@@ -166,17 +166,17 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
             self.cloud.show_leds = not self.cloud.show_leds
             self.updateGL()
             
-        dirs = {QtCore.Qt.Key_Left: [-1,0],
-                QtCore.Qt.Key_Right: [1,0],
-                QtCore.Qt.Key_Up: [0,1],
-                QtCore.Qt.Key_Down: [0,-1]}
-        for (k,v) in dirs.items():
+        dirs = {QtCore.Qt.Key_Left: [-1, 0],
+                QtCore.Qt.Key_Right: [1, 0],
+                QtCore.Qt.Key_Up: [0, 1],
+                QtCore.Qt.Key_Down: [0, -1]}
+        for (k, v) in dirs.items():
             if key == k:
-                glTranslatef(10*v[0], 10*v[1], 0)
+                glTranslatef(10 * v[0], 10 * v[1], 0)
                 self.updateGL()
                 
         if key == QtCore.Qt.Key_3:
-            self.cloud.led_stacking_mode = (self.cloud.led_stacking_mode+1)%3
+            self.cloud.led_stacking_mode = (self.cloud.led_stacking_mode + 1) % 3
             self.updateGL()
             
         if key == QtCore.Qt.Key_B:
@@ -189,7 +189,7 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
         
     def mypaint(self, real):
         self.setMode(real)
-	    self.set3dProjection()
+        self.set3dProjection()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
 
@@ -198,7 +198,7 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
             y = d.y
             z = d.z
             glPushMatrix()
-            glTranslatef(x,y,z)
+            glTranslatef(x, y, z)
             if real:
                 if self.cloud.show_body:
                     glColor4f(*self.cloud.settings.graphics.simple_body_color)
@@ -220,27 +220,27 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
                         glPushMatrix()
                         glRotatef(core._radian_to_deg(d.leds[1]), 0, 0, 1) #theta
                         glRotatef(core._radian_to_deg(d.leds[2]), 0, 1, 0) #phi
-                        glColor3f(0.5,1,0.5)
+                        glColor3f(0.5, 1, 0.5)
                         glCallList(self.get_wave_cone(d.leds[0])) #radius
                         glPopMatrix()
                     elif self.cloud.led_blend:
-                        if(d.leds != [0,0,0]):
+                        if(d.leds != [0, 0, 0]):
                             glPushMatrix()
-                            glTranslatef(0,0,0)
+                            glTranslatef(0, 0, 0)
                             glColor3f(*d.leds)
                             glCallList(self.listBlendLed)
                             glPopMatrix()
                     else:
-                        leds = [0,0,0]
+                        leds = [0, 0, 0]
                         if not self.cloud.led_flat:
                             if self.cloud.led_stacking_mode == pymorphous.implementation.simulator.constants.LED_STACKING_MODE_DIRECT:
                                 acc = 0
                                 for i in range(3):
-                                    leds[i] = d.leds[i]+acc
+                                    leds[i] = d.leds[i] + acc
                                     acc += d.leds[i]
                             elif self.cloud.led_stacking_mode == pymorphous.implementation.simulator.constants.LED_STACKING_MODE_OFFSET:
                                 for i in range(3):
-                                    leds[i] = d.leds[i]+i
+                                    leds[i] = d.leds[i] + i
                             else:
                                 for i in range(3):
                                     leds[i] = d.leds[i]
@@ -248,7 +248,7 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
                         for i in range(3):
                             if d.leds[i] != 0:
                                 glPushMatrix()
-                                glTranslatef(0,0,leds[i])
+                                glTranslatef(0, 0, leds[i])
                                 glColor4f(*self.cloud.settings.graphics._led_colors[i])
                                 glCallList(self.listLeds[i])
                                 glPopMatrix()
@@ -266,7 +266,7 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
 	glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         
-        gluPerspective(45.0,float(self.width())/self.height(),0.1,200.0)    #setup lens
+        gluPerspective(45.0, float(self.width()) / self.height(), 0.1, 200.0)    #setup lens
         glTranslatef(0, 0, -150.0)                #move back
         #glRotatef(60, 1, 60, 90)                       #orbit higher
         glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
@@ -278,12 +278,12 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
         if real:
             color = self.cloud.settings.graphics.background_color
         else:
-            color = (1,1,1,1)
+            color = (1, 1, 1, 1)
         glClearColor(*color)
   
 def simulator_graphics(cloud):
     app = QtGui.QApplication(sys.argv)
-    window = core._SimulatorWindow(cloud = cloud, widget=_SimulatorGLWidget)
+    window = core._SimulatorWindow(cloud=cloud, widget=_SimulatorGLWidget)
     window.show()
     sys.exit(app.exec_())
     

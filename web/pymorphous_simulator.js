@@ -1,3 +1,33 @@
+/*
+ * Copyright 2009, Google Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 function Cloud(settings) {
     var devices = [];
     if(settings.arrangement == "grid") {
@@ -55,7 +85,7 @@ var g_eyeSpeed          = 0.5;
 //var g_eyeHeight         = 20;
 //var g_eyeRadius         = 90;
 var g_eyeHeight         = 2;
-var g_eyeRadius         = 70;
+var g_eyeRadius         = -100;
 
 function ValidateNoneOfTheArgsAreUndefined(functionName, args) {
     for (var ii = 0; ii < args.length; ++ii) {
@@ -74,7 +104,7 @@ function Log(msg) {
 
 function LogGLCall(functionName, args) {
     if (g_logGLCalls) {
-        ValidateNoneOfTheArgsAreUndefined(functionName, args)
+        ValidateNoneOfTheArgsAreUndefined(functionName, args);
         tdl.log("gl." + functionName + "(" +
         tdl.webgl.glFunctionArgsToString(functionName, args) + ")");
     }
@@ -92,7 +122,7 @@ function setupCone() {
     var program = createProgramFromTags(
     'coneVertexShader',
     'coneFragmentShader');
-    var arrays = tdl.primitives.createTruncatedCone(CONE_WIDTH, 0, CONE_HEIGHT, 10, 12);
+    var arrays = tdl.primitives.createTruncatedCone(0, CONE_WIDTH, CONE_HEIGHT, 10, 12);
 
     return new tdl.models.Model(program, arrays, textures);
 }
@@ -233,8 +263,7 @@ function initialize(c, f, cl) {
             lightColor[0] = 0;
             lightColor[1] = 1;
             lightColor[2] = 0;
-            fast.matrix4.translation(m4t0, [0, CONE_HEIGHT/2, 0]);
-            fast.matrix4.rotateX(m4t0, 90+d.green());
+            fast.matrix4.rotationX(m4t0, 90+d.green());
             fast.matrix4.rotateZ(m4t0, d.blue());
             fast.addVector(v3t3, d.coord(), [-cloud.width/2, -cloud.height/2, -cloud.depth/2]);
             fast.matrix4.translation(m4t1, v3t3);
