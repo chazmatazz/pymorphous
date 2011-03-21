@@ -1,15 +1,10 @@
 #VRML_SIM V6.0 utf8
 WorldInfo {
   info [
-    "A blimp robot model demonstrating custom physics."
-    "If you wish you can control the robot with the keyboard:"
-    "The control keys are: up, down, right, left, page up, page down and space (reset)."
-    "Authors: Jean-Christophe Zufferey, Alexis Guanella, Antoine Beyeler"
-    "Laboratory of Intelligent Systems (LIS)"
-    "Swiss Federal Institute of Technology (EPFL), Lausanne"
-    "Date: APRIL 2006"
+    "PyMorphous Tracking Velocity"
+    "Authors: Charles Dietrich, KJ Khalsa"
   ]
-  title "LIS-EPFL Blimp"
+  title "Sensor Test"
   physics "blimp_physics"
   runRealTime TRUE
 }

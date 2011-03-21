@@ -1,3 +1,6 @@
+# Copyright (C) 2011 by Charles Dietrich, MIT Proto authors
+# Licensed under the Lesser GNU Public License
+# http://www.gnu.org/licenses/lgpl.html
 from pymorphous.core import *
 import numpy
 

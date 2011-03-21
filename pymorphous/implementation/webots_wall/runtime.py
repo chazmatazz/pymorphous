@@ -1,3 +1,6 @@
+# Copyright (C) 2011 by Charles Dietrich, KJ Khalsa
+# Licensed under the Lesser GNU Public License
+# http://www.gnu.org/licenses/lgpl.html
 """ 
 Defines the wall device
 exposes an implementation
