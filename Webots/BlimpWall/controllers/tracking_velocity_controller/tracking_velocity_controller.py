@@ -79,7 +79,6 @@ class WallTracking(Device):
                         most_recent_coord = coord
                     if tracking_start_time > -1 and delta != None and self.is_close(coord + delta):
                         self.is_next = True
-                        print coord, self.coord, delta
         if most_recent_coord != None:
             self.delta = self.coord - most_recent_coord
             #print self.coord,self.tracking_start_time, self.delta

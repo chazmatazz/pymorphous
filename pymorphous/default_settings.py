@@ -36,6 +36,8 @@ class _Runtime(dict):
         self['auto_record'] = False
         self['dir_image'] = os.path.join('output', 'image')
         self['tmp_dir_video'] = os.path.join('output', 'video')
+
+	self['mouse_immediate'] = False
         
     def __getattr__(self, name):
         return self[name]

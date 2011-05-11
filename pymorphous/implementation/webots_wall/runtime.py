@@ -13,35 +13,18 @@ import controller
 import uuid
 import pickle
 import numpy
+import math
 
 from pymorphous.implementation.simulator.runtime import _Field, _NbrKeyError
-
+from pymorphous.implementation.webots_wall.robots import GenericRobot
 _USE_SAFE_NBR = False
-TIMEOUT = 32000000000
+TIMEOUT = 8
 class _Message(object):
     def __init__(self, id, time, data):
         self.id = id
         self.time = time
         self.data = data
-        
-class GenericRobot(controller.Robot):
-  timeStep = 320 #originally 32
-
-  def initialize(self, klass, settings, *args):
-    
-    self.o = klass(settings, str(uuid.uuid4()), self)
-    if hasattr(self.o, 'setup'):
-        if args:
-            self.o.setup(*args)
-        else:
-            self.o.setup()
-  def run(self):  
-    while True:
-        #a=self.getLED('led0')
-        #a.set(2)
-        self.o.dostep()
-        if self.step(self.timeStep) == -1: break
-        
+                
 
 class _BaseDevice(object):
     def __init__(self, settings, id, webot_robot, *args, **kwargs):
@@ -57,10 +40,24 @@ class _BaseDevice(object):
         self._root_frame = None
         self._leds = self._Leds(self)
         self._senses = self._Senses(self)
-	self._num_transmitters = 6
+	self._num_transmitters = 1
 	self.time = time.time()
 	self.gps = self._webot_robot.getGPS('gps')
 	self.gps.enable(self._webot_robot.timeStep)
+	self.compass = False
+	if self.compass:
+		self.compass = self._webot_robot.getCompass('compass')
+		self.compass.enable(self._webot_robot.timeStep)
+	self._velocity = numpy.array([0.0,0.0,0.0])
+	self._actual_velocity = numpy.array([0.0,0.0,0.0])
+	self._epsilon = 0.4
+	self._speed_counter = 0 #var for keeping track of time steps; used for object avoidance
+	self._backup_counter = 0 #used for object avoidance
+	self._forward_counter = 0 #used to go forward a set amount of time after getting stuck
+	self._previous_loc = None #used to detect robot getting stuck
+	self._offset = 0 #used to temporarily move in a random direction when stuck
+	self._offset_start_time = -1 #start time of offset, used to expire offset and reset it to 0 
+	self._offset_timeout = 4
 	for i in range(self._num_transmitters):
 		self._webot_robot.getReceiver("receiver" + str(i + 1)).enable(self._webot_robot.timeStep)  
     
@@ -107,11 +104,11 @@ class _BaseDevice(object):
         def __getitem__(self, key):
             return self.parent._webot_robot.getDistanceSensor('sensor' + str(key + 1)).getValue()
 
-    @property
+    @property # unused??
     def senses(self):
-        return self._senses
+        return self._senses 
     
-    @senses.setter
+    @senses.setter #unused ?
     def senses(self, value):
         for i in range(3):
             self._senses[i] = value[i]
@@ -122,12 +119,46 @@ class _BaseDevice(object):
         return 0
     
     def move(self, velocity):
-        self._velocity = velocity
-    
-    @property
+	if self._backup_counter >0:
+		self._webot_robot.setSpeed(-10-self._offset,-10+self._offset)
+		self._backup_counter -= 1
+		if self._backup_counter ==1: 
+			self._offset_start_time = -1 #about to end backing up,resetting offset
+			self._offset =0
+			self._forward_counter = numpy.random.randint(7,14)
+	elif self._forward_counter>0: 
+		self._webot_robot.setSpeed(50,50)
+		self._forward_counter-=1
+	else:#only go forward if we're not trying to get unstuck
+		self._velocity = velocity
+		north = self.compass.getValues()
+		rad = math.atan2(north[0], north[2])
+		if numpy.any(velocity):
+			if abs(velocity[2])<.1: velocity[2] = abs(velocity[2]) #avoid very small negative values affecting atan2
+			desired_rad = math.atan2(-velocity[2],-velocity[0]) #switched to make consistant with compass
+			delta = desired_rad-rad	
+			if abs(delta) > self._epsilon:
+				self._webot_robot.setSpeed(10*delta,-10*delta)	
+			else:
+				speed = math.sqrt(numpy.dot(velocity,velocity))
+				if numpy.equal(self._previous_loc, self.coord)[0]: #could be stuck
+					self._speed_counter += 1				
+					if self._speed_counter >3:
+						self._backup_counter = numpy.random.randint(11,15); #backup for a random number of timesteps
+						self._speed_counter = 0;
+						if self.sense1>self.sense2: self._offset = numpy.random.uniform(.30,.40)*25
+						else: self._offset = numpy.random.uniform(-.40,-.30)*25
+				
+				else: self._speed_counter =0				
+				if self._offset_start_time !=-1:
+					if (self._time - self._offset_start_time) > self._offset_timeout: #check and reset offset since it is outdated
+						self._offset = 0
+						self._offset_start_time = -1
+				self._previous_loc = self.coord
+				self._webot_robot.setSpeed(speed, speed) #move and avoid objects
     def velocity(self):
-        return self._velocity
-    
+	return self._velocity
+
     @property
     def x(self):
         return self.coord[0]
@@ -221,6 +252,7 @@ class _BaseDevice(object):
 		while r.getQueueLength() > 0:
 			buffer = r.getData()
 			message = pickle.loads(buffer)
+			
 			self._nbrs[message.id] = message.time
 			for (b, v) in message.data.items():
 			    try:
@@ -262,8 +294,8 @@ class _BaseDevice(object):
 		 self._fields[b] = f
 	        
 
-def _spawn_cloud(settings, klass=None, args=None, **kwargs):
-    m = GenericRobot()
+def _spawn_cloud(settings, klass=None, args=None, robot = GenericRobot, **kwargs):
+    m = robot()
     m.initialize(klass, settings)
     m.run()
 

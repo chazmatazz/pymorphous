@@ -50,7 +50,8 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
         self.zRot = 0
         
         self._wave_cone_cache = {}
-        
+	self.mouse_immediate = self.cloud.mouse_immediate        
+	
     def __del__(self):
         self.makeCurrent()
 
@@ -143,22 +144,33 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
             return self._wave_cone_cache[radius]
 
     def mousePressEvent(self, event):
-        d = self.select_device(event)
-        if d:
-            if d == self.selected_device:
-                self.selected_device = None
-            else:
-                self.selected_device = d
-            
+	if not self.mouse_immediate:
+		d = self.select_device(event)
+		if d:
+		    if d == self.selected_device:
+		        self.selected_device = None
+		    else:
+		        self.selected_device = d
+
         self.lastPos = event.pos()
 
     def mouseMoveEvent(self, event):
-        dx = event.x() - self.lastPos.x()
+	dx = event.x() - self.lastPos.x()
         dy = event.y() - self.lastPos.y()
-
+	
+                
         if event.buttons() & QtCore.Qt.LeftButton:
-            self.xRotation = self.xRot + 8 * dy
-            self.yRotation = self.yRot + 8 * dx
+		if self.mouse_immediate:
+			for d in self.cloud.devices:
+		    		d._reset_senses()
+			self.selected_device = None
+			d = self.select_device(event)
+			if d:
+				self.selected_device = d
+				self.selected_device.senses[0] = True
+        	else:    
+			self.xRotation = self.xRot + 8 * dy
+			self.yRotation = self.yRot + 8 * dx
         elif event.buttons() & QtCore.Qt.RightButton:
             self.xRotation = self.xRot + 8 * dy
             self.zRotation = self.zRot + 8 * dx
@@ -205,10 +217,12 @@ class _SimulatorGLWidget(core._BaseSimulatorWidget):
         if key == QtCore.Qt.Key_W:
             self.cloud.led_wave_wall = not self.cloud.led_wave_wall
             self.updateGL()
+	if key == QtCore.Qt.Key_M:
+		self.mouse_immediate = not self.mouse_immediate
         
     def mypaint(self, real):
         self.setMode(real)
-        self.set3dProjection()
+	self.set3dProjection()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
 
