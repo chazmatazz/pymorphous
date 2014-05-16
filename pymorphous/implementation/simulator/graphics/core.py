@@ -34,7 +34,7 @@ except ImportError:
                             QtGui.QMessageBox.NoButton)
     sys.exit(1)
     
-import Image
+from PIL import Image
 
 import pymorphous.implementation.simulator.constants
 
