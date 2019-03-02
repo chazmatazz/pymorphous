@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 import time
-from PySide import QtCore, QtGui, QtOpenGL
+from PySide2 import QtCore, QtWidgets, QtOpenGL
 import sys
 import math
 import numpy
@@ -29,11 +29,11 @@ try:
     from OpenGL.GLU import *
     from OpenGL.GLUT import *
 except ImportError:
-    app = QtGui.QApplication(sys.argv)
-    QtGui.QMessageBox.critical(None, "PyMorphous",
+    app = QtWidgets.QApplication(sys.argv)
+    QtWidgets.QMessageBox.critical(None, "PyMorphous",
                             "PyOpenGL must be installed to run PyMorphous.",
-                            QtGui.QMessageBox.Ok | QtGui.QMessageBox.Default,
-                            QtGui.QMessageBox.NoButton)
+                            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Default,
+                            QtWidgets.QMessageBox.NoButton)
     sys.exit(1)
     
 import Image
@@ -343,7 +343,7 @@ def wall_graphics(cloud):
     fmt = QtOpenGL.QGLFormat()
     fmt.setAlpha(True)
     QtOpenGL.QGLFormat.setDefaultFormat(fmt)
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     window = core._SimulatorWindow(cloud = cloud, widget=_WallGLWidget)
     window.show()
     sys.exit(app.exec_())

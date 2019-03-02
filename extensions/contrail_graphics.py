@@ -23,28 +23,28 @@ import numpy
 
 import pymorphous.simulator_graphics
 
-from PySide import QtCore, QtGui, QtOpenGL
+from PySide2 import QtCore, QtWidgets, QtOpenGL
 
 try:
     from OpenGL.GL import *
     from OpenGL.GLU import *
     from OpenGL.GLUT import *
 except ImportError:
-    app = QtGui.QApplication(sys.argv)
-    QtGui.QMessageBox.critical(None, "PyMorphous",
+    app = QtWidgets.QApplication(sys.argv)
+    QtWidgets.QMessageBox.critical(None, "PyMorphous",
                             "PyOpenGL must be installed to run PyMorphous.",
-                            QtGui.QMessageBox.Ok | QtGui.QMessageBox.Default,
-                            QtGui.QMessageBox.NoButton)
+                            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Default,
+                            QtWidgets.QMessageBox.NoButton)
     sys.exit(1)
 
 
-class Window(QtGui.QWidget):
+class Window(QtWidgets.QWidget):
     def __init__(self, cloud, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         self.glWidget = ContrailGLWidget(cloud)
         
-        mainLayout = QtGui.QHBoxLayout()
+        mainLayout = QtWidgets.QHBoxLayout()
         mainLayout.addWidget(self.glWidget)
         self.setLayout(mainLayout)
         
@@ -126,7 +126,7 @@ class ContrailGLWidget(pymorphous.simulator_graphics._SimulatorGLWidget):
         self.set3dRotation()
             
 def contrail_graphics(cloud):
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     window = Window(cloud = cloud)
     window.show()
     sys.exit(app.exec_())
